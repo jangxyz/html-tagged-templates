@@ -1,0 +1,25 @@
+{
+	"$schema": "https://biomejs.dev/schemas/1.7.3/schema.json",
+	"organizeImports": {
+		"enabled": true
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true
+		}
+	},
+	"formatter": {
+		"lineWidth": 120,
+		"indentStyle": "tab",
+		"indentWidth": 2
+	},
+	"overrides": [{
+    "include": ["src/**/*.test.ts"],
+		"javascript": {
+			"formatter": {
+				"semicolons": "asNeeded"
+			}
+		}
+	}]
+}
