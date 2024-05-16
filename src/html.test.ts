@@ -4,7 +4,7 @@
 
 import { beforeEach, describe, expect, expectTypeOf, test } from "vitest"
 
-import { htmlFn, htmlFnWithArrayArgs, htmlSingleFn, lastOf } from "./html.js"
+import { htmlFn, htmlWithArrayArgsFn, htmlWithQueryFn, htmlSingleFn, lastOf } from "./html.js"
 
 test("is a function", () => {
 	expect(htmlFn).toBeInstanceOf(Function)
@@ -39,14 +39,14 @@ describe("edge cases", () => {
 
 describe("returning many", () => {
 	test("returns many elements", () => {
-		const [divEl, pEl] = htmlFn("<div>Hi there,</div><p>I am here</p>")
+		const [divEl, pEl] = htmlWithArrayArgsFn(["<div>Hi there,</div>", "<p>I am here</p>"])
 
 		expect((divEl as HTMLElement).tagName).toEqual("DIV")
 		expect((pEl as HTMLElement).tagName).toEqual("P")
 	})
 
 	test("returns multiples of elements and nodes", () => {
-		const [divEl, text, pEl] = htmlFn("<div>Hi</div> there, <p>I am here</p>")
+		const [divEl, text, pEl] = htmlWithArrayArgsFn(["<div>Hi</div>", " there, ", "<p>I am here</p>"])
 
 		expect((divEl as HTMLElement).tagName).toEqual("DIV")
 		expect((text as Text).data).toEqual(" there, ")
@@ -55,16 +55,21 @@ describe("returning many", () => {
 
 	describe("with types", () => {
 		test("returns many elements", () => {
-			const [divEl, pEl] = htmlFn<[HTMLDivElement, HTMLParagraphElement]>("<div>Hi there,</div><p>I am here</p>")
+			const [divEl, pEl] = htmlWithArrayArgsFn<[HTMLDivElement, HTMLParagraphElement]>([
+				"<div>Hi there,</div>",
+				"<p>I am here</p>",
+			])
 
 			expect(divEl.tagName).toEqual("DIV")
 			expect(pEl.tagName).toEqual("P")
 		})
 
 		test("returns multiples of elements and nodes", () => {
-			const [divEl, text, pEl] = htmlFn<[HTMLDivElement, Text, HTMLParagraphElement]>(
-				"<div>Hi</div> there, <p>I am here</p>",
-			)
+			const [divEl, text, pEl] = htmlWithArrayArgsFn<[HTMLDivElement, Text, HTMLParagraphElement]>([
+				"<div>Hi</div>",
+				" there, ",
+				"<p>I am here</p>",
+			])
 
 			expect(divEl.tagName).toEqual("DIV")
 			expect(text.data).toEqual(" there, ")
@@ -74,9 +79,9 @@ describe("returning many", () => {
 })
 
 describe("return many with array of elements as input", () => {
-	let subject: typeof htmlFnWithArrayArgs
+	let subject: typeof htmlWithArrayArgsFn
 	beforeEach(() => {
-		subject = htmlFnWithArrayArgs
+		subject = htmlWithArrayArgsFn
 		//subject = htmlFn as unknown as typeof htmlFnWithArrayArgs
 	})
 
@@ -115,54 +120,63 @@ describe("return many with array of elements as input", () => {
 	})
 })
 
-test("last argument may be an option", () => {
-	const result = htmlFn("<div>Hi there</div>", {})
-	const [el] = result
-	expect(el).toBeInstanceOf(HTMLElement)
-	expect(result).toHaveLength(1)
-})
+//test.skip("last argument may be an option", () => {
+//	const result = htmlFn("<div>Hi there</div>", {})
+//	const [el] = result
+//	expect(el).toBeInstanceOf(HTMLElement)
+//	expect(result).toHaveLength(1)
+//})
 
 describe("nesting", () => {
 	test("create nested element", () => {
-		const [divEl] = htmlFn<[HTMLElement]>("<div>Hi there, <em>mate<em>!</div>")
+		const [divEl] = htmlFn("<div>Hi there, <em>mate<em>!</div>")
 		expect(divEl).toBeInstanceOf(HTMLDivElement)
 
-		const emEl = divEl.querySelector("em")
+		const emEl = (divEl as HTMLElement).querySelector("em")
 		expect(emEl).toBeInstanceOf(HTMLElement)
 	})
 
 	test("assign nested queries as option", () => {
-		const result = htmlFn("<div>Hi there, <em>mate<em>!</div>", {
+		const result = htmlWithQueryFn("<div>Hi there, <em>mate<em>!</div>", {
 			query: {
 				emEl: "em",
 				boldEl: "bold",
 			},
 		})
 
-		const [divEl] = result
-		const { emEl, boldEl } = lastOf(result)
+		//const [divEl] = result
+		//const { emEl, boldEl } = lastOf(result)
+		const {
+			element: divEl,
+			query: { emEl, boldEl },
+		} = result
 
 		expect(divEl).toBeInstanceOf(HTMLDivElement)
 		expect(emEl).toBeInstanceOf(HTMLElement)
 		expect(boldEl).toBeNull()
 	})
 
-	test("nested query works with multiple input args too", () => {
-		const result = htmlFn(["<h1>Title</h1>", "<p>Hi there, <em>mate</em>!</p>"], {
-			query: {
-				emEl: "em",
-			},
-		})
-		const [[headingEl, pEl], { emEl }] = result
-		expect(headingEl).toBeInstanceOf(HTMLHeadingElement)
-		expect(pEl).toBeInstanceOf(HTMLParagraphElement)
-		expect(emEl?.textContent).toEqual("mate")
-	})
+	//test.skip("nested query works with multiple input args too", () => {
+	//	const result = htmlFn(["<h1>Title</h1>", "<p>Hi there, <em>mate</em>!</p>"], {
+	//		query: {
+	//			emEl: "em",
+	//		},
+	//	})
+	//	console.log("🚀 ~ file: html.test.ts:174 ~ test ~ result:", result)
+	//	const [
+	//		[headingEl, pEl],
+	//		{ query: { emEl } },
+	//	] = result
+	//	expect(headingEl).toBeInstanceOf(HTMLHeadingElement)
+	//	expect(pEl).toBeInstanceOf(HTMLParagraphElement)
+	//	expect(emEl?.textContent).toEqual("mate")
+	//})
 })
 
 describe("attributes", () => {
 	test("assign attributes properly", () => {
-		const [button] = htmlFn<[HTMLButtonElement]>('<button type="button" aria-pressed="false">Click me</button>')
+		const result = htmlFn('<button type="button" aria-pressed="false">Click me</button>')
+		const [button] = result as [HTMLButtonElement]
 
 		expect(button.getAttribute("type")).toEqual("button")
 		expect(button.getAttribute("aria-pressed")).toEqual("false")

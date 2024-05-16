@@ -10,10 +10,14 @@ type NestedQuery = Record<string, string>;
 
 type Options<Q extends NestedQuery> = {
 	query: Q;
+	queryAll: Q;
 };
 
 type QueryResultOf<Q extends NestedQuery> = {
 	[K in keyof Q]: HTMLElement | null;
+};
+type QueryAllResultOf<Q extends NestedQuery> = {
+	[K in keyof Q]: NodeList;
 };
 
 type ContainerElement = HTMLElement | HTMLTemplateElement;
@@ -29,12 +33,12 @@ export function htmlFn<T extends Node[], Q extends NestedQuery>(
 	options: { query: Q },
 ): [...T, QueryResultOf<Q>];
 // overload - string array
-export function htmlFn(htmlStrings: string[]): ReturnType<typeof htmlFnWithArrayArgs>;
+export function htmlFn(htmlStrings: string[]): ReturnType<typeof htmlWithArrayArgsFn>;
 // overload - string array + query option
 export function htmlFn<Q extends NestedQuery>(
 	htmlStrings: string[],
 	options: { query: Q },
-): [ReturnType<typeof htmlFnWithArrayArgs>, QueryResultOf<Q>];
+): [ReturnType<typeof htmlWithArrayArgsFn>, QueryResultOf<Q>];
 // overload - default options
 export function htmlFn<T extends Node[], Q extends NestedQuery>(
 	htmlString: string,
@@ -55,40 +59,40 @@ export function htmlFn<T_Nodes extends Node[], Q extends NestedQuery>(
 			return result[0];
 		}) as T_Nodes;
 
-		if (hasQueryOption(options)) {
-			const queryResult = containerEl ? buildQueryResult(containerEl, options?.query) : ({} as QueryResultOf<Q>);
-			return [resultNodes, queryResult];
-		}
+		//if (hasAnyQueryOption(options)) {
+		//	const queryResults = containerEl ? buildQueryResult(containerEl, options) : ({} as QueryResultOf<Q>);
+		//	return [resultNodes, queryResults];
+		//}
 
 		return resultNodes;
 	}
 
-	// query option
-	if (hasQueryOption(options)) {
-		return htmlFnWithQueryOption<T_Nodes, Q>(htmlString, options);
-	}
+	//// query option
+	//if (hasQueryOption(options)) {
+	//	return htmlWithQueryFn<T_Nodes, Q>(htmlString, options);
+	//}
 
 	const [resultNodes] = buildChildNodes<T_Nodes>(htmlString);
 	return resultNodes;
 }
 
 /**
- * Accept html strings as string array.
+ * Accept html strings as array of strings.
  */
 // overload: single-element
-export function htmlFnWithArrayArgs<T_Str extends HtmlTagName>(
+export function htmlWithArrayArgsFn<T_Str extends HtmlTagName>(
 	htmlString: [ElementPrefixedString<T_Str>],
 ): [HTMLElementTagNameMap[T_Str]];
 // overload: single-comment
-export function htmlFnWithArrayArgs(htmlString: [CommentPrefixedString]): [Comment];
+export function htmlWithArrayArgsFn(htmlString: [CommentPrefixedString]): [Comment];
 // overload: single-text
-export function htmlFnWithArrayArgs(htmlString: [string]): [Text];
+export function htmlWithArrayArgsFn(htmlString: [string]): [Text];
 // overload: single-any
-export function htmlFnWithArrayArgs<T_Node extends Node>(htmlStrings: [string]): [T_Node];
+export function htmlWithArrayArgsFn<T_Node extends Node>(htmlStrings: [string]): [T_Node];
 // overload: multiple any
-export function htmlFnWithArrayArgs<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes;
+export function htmlWithArrayArgsFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes;
 // impl.
-export function htmlFnWithArrayArgs<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes {
+export function htmlWithArrayArgsFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes {
 	if (htmlStrings.length === 0) return [] as unknown as T_Nodes;
 
 	if (htmlStrings.length === 1) {
@@ -227,16 +231,58 @@ export function htmlSingleFn<T extends Node, Q extends NestedQuery = {}>(
 	///
 }
 
+type OptionsWithQuery<Q extends NestedQuery> = { query: Q };
+type OptionsWithQueryAll<Q extends NestedQuery> = { queryAll: Q };
+type OptionsWithBothQuery<Q1 extends NestedQuery, Q2 extends NestedQuery> = { query: Q1; queryAll: Q2 };
+
 /**
  * Accept query option
  */
-function htmlFnWithQueryOption<T extends Node[], Q extends NestedQuery>(
+// overload: both 'query' and 'queryAll'
+export function htmlWithQueryFn<T extends Node, Q1 extends NestedQuery, Q2 extends NestedQuery>(
 	htmlString: string,
-	options: { query: Q },
-): [...T, QueryResultOf<Q>] {
-	const [resultNodes, containerEl] = buildChildNodes<T>(htmlString);
-	const queryResult = buildQueryResult(containerEl, options.query);
-	return [...resultNodes, queryResult];
+	options?: OptionsWithBothQuery<Q1, Q2>,
+): {
+	element: T;
+	query: QueryResultOf<Q1>;
+	queryAll: QueryAllResultOf<Q2>;
+};
+// overload: 'query' only
+export function htmlWithQueryFn<T extends Node, Q1 extends NestedQuery, Q2 extends NestedQuery>(
+	htmlString: string,
+	options?: OptionsWithQuery<Q1>,
+): {
+	element: T;
+	query: QueryResultOf<Q1>;
+	queryAll: undefined;
+};
+// overload: 'queryAll' only
+export function htmlWithQueryFn<T extends Node, Q1 extends NestedQuery, Q2 extends NestedQuery>(
+	htmlString: string,
+	options?: OptionsWithQueryAll<Q2>,
+): {
+	element: T;
+	query: undefined;
+	queryAll: QueryAllResultOf<Q2>;
+};
+// actual implementation
+export function htmlWithQueryFn<T extends Node, Q extends NestedQuery>(
+	htmlString: string,
+	options?: Partial<Options<Q>>,
+): {
+	element: T;
+	query?: QueryResultOf<Q>;
+	queryAll?: QueryAllResultOf<Q>;
+} {
+	//const [resultNodes, containerEl] = buildChildNodes<T>(htmlString);
+	const [resultNode, containerEl] = buildSingleNode<T>(htmlString);
+
+	const queryResults = buildQueryResult<Q>(containerEl, options);
+
+	return {
+		element: resultNode,
+		...queryResults,
+	};
 }
 
 ///
@@ -244,6 +290,12 @@ function htmlFnWithQueryOption<T extends Node[], Q extends NestedQuery>(
 
 function hasQueryOption<Q extends NestedQuery>(options?: Partial<Options<Q>>): options is { query: Q } {
 	return Boolean(options?.query);
+}
+function hasQueryAllOption<Q extends NestedQuery>(options?: Partial<Options<Q>>): options is { queryAll: Q } {
+	return Boolean(options?.queryAll);
+}
+function hasAnyQueryOption<Q extends NestedQuery>(options?: Partial<Options<Q>>) {
+	return hasQueryOption<Q>(options) || hasQueryAllOption<Q>(options);
 }
 
 /**
@@ -295,16 +347,29 @@ function buildChildNodes<T extends Node[]>(htmlString: string, container?: Conta
 	return [[...resultNodes] as unknown as T, containerEl];
 }
 
-function buildQueryResult<Q extends NestedQuery>(containerEl: ContainerElement, query: Q) {
-	const queryResult: QueryResultOf<Q> = Object.entries(query).reduce(
-		(memo, [name, selector]) => {
+function buildQueryResult<Q extends NestedQuery>(
+	containerEl: ContainerElement,
+	queryOptions?: Partial<Options<Q>>,
+): Partial<{ query: QueryResultOf<Q>; queryAll: QueryAllResultOf<Q> }> {
+	// 'query'
+	let query = {} as QueryResultOf<Q>;
+	if (queryOptions?.query) {
+		query = Object.entries(queryOptions.query).reduce((memo, [name, selector]) => {
 			memo[name as keyof Q] = queryContainer(containerEl, selector);
 			return memo;
-		},
-		{} as Record<keyof Q, HTMLElement | null>,
-	);
+		}, query);
+	}
 
-	return queryResult;
+	// 'queryAll'
+	let queryAll = {} as QueryAllResultOf<Q>;
+	if (queryOptions?.queryAll) {
+		queryAll = Object.entries(queryOptions.queryAll).reduce((memo, [name, selector]) => {
+			memo[name as keyof Q] = queryAllContainer(containerEl, selector);
+			return memo;
+		}, queryAll);
+	}
+
+	return { query, queryAll };
 }
 
 export function lastOf<T extends readonly unknown[]>(tuple: T): LastElementOf<T> {
@@ -336,4 +401,15 @@ function queryContainer<T extends HTMLElement = HTMLElement>(containerEl: Contai
 	}
 
 	return queryEl.querySelector<T>(selector);
+}
+
+function queryAllContainer<T extends HTMLElement = HTMLElement>(containerEl: ContainerElement, selector: string) {
+	let queryEl: HTMLElement | DocumentFragment;
+	if (containerEl instanceof HTMLTemplateElement) {
+		queryEl = containerEl.content;
+	} else {
+		queryEl = containerEl;
+	}
+
+	return queryEl.querySelectorAll<T>(selector);
 }
