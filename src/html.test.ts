@@ -3,20 +3,22 @@ import { HTMLCollection } from "happy-dom"
 import { GlobalRegistrator } from "@happy-dom/global-registrator"
 GlobalRegistrator.register({ url: "http://localhost:3000" })
 
-import { describe, expect, expectTypeOf, test } from "vitest"
+import { beforeEach, describe, expect, expectTypeOf, test } from "vitest"
 
-import { htmlFn } from "./html.js"
+import { htmlFn, htmlFnWithArrayArgs, htmlSingleFn, lastOf } from "./html.js"
 
 test("is a function", () => {
-	console.log("type:", typeof htmlFn)
-	expectTypeOf(htmlFn).toBeFunction()
+	expect(htmlFn).toBeInstanceOf(Function)
+	// biome-ignore lint/complexity/noBannedTypes: <explanation>
+	expectTypeOf<Function>(htmlFn)
 })
 
 test("returns items of elements", () => {
 	const result = htmlFn("<div>Hi there</div>")
+	expect(result).toHaveLength(1)
+
 	const [el] = result
 	expect(el).toBeInstanceOf(HTMLElement)
-	expect(result).toHaveLength(1)
 })
 
 test.skip("returns list of elements", () => {
@@ -36,12 +38,12 @@ describe("returning many", () => {
 		const [divEl, text, pEl] = htmlFn("<div>Hi</div> there, <p>I am here</p>")
 
 		expect((divEl as HTMLElement).tagName).toEqual("DIV")
-		expect((text as Text).wholeText).toEqual(" there, ")
+		expect((text as Text).data).toEqual(" there, ")
 		expect((pEl as HTMLElement).tagName).toEqual("P")
 	})
 
 	describe("with types", () => {
-		test("returns many elementswith types", () => {
+		test("returns many elements", () => {
 			const [divEl, pEl] = htmlFn<[HTMLDivElement, HTMLParagraphElement]>("<div>Hi there,</div><p>I am here</p>")
 
 			expect(divEl.tagName).toEqual("DIV")
@@ -54,18 +56,50 @@ describe("returning many", () => {
 			)
 
 			expect(divEl.tagName).toEqual("DIV")
-			expect(text.wholeText).toEqual(" there, ")
+			expect(text.data).toEqual(" there, ")
 			expect(pEl.tagName).toEqual("P")
 		})
 	})
 })
 
 describe("return many with array of elements as input", () => {
-	test.only("returns many elements", () => {
-		const [divEl, text, pEl] = htmlFn(["<div>Hi</div>", " there, ", "<p>I am here</p>"])
+	let subject: typeof htmlFnWithArrayArgs
+	beforeEach(() => {
+		subject = htmlFnWithArrayArgs
+		//subject = htmlFn as unknown as typeof htmlFnWithArrayArgs
+	})
+
+	test("single item - element", () => {
+		const [node1] = subject(["<div>Hi</div>"])
+		expectTypeOf<HTMLDivElement>(node1)
+		expect(node1.tagName).toEqual("DIV")
+
+		const [node2] = subject(["<p>Hi</p>"])
+		expectTypeOf<HTMLParagraphElement>(node2).toEqualTypeOf(node1)
+		expect(node2.tagName).toEqual("P")
+	})
+	test("single item - text", () => {
+		const [node] = subject(["Hi"])
+
+		expectTypeOf<Text>(node)
+		expect(node.nodeType).toEqual(document.TEXT_NODE)
+		expect(node.nodeValue).toEqual("Hi")
+	})
+	test("single item - comment", () => {
+		const [node] = subject(["<!-- I am a comment -->"])
+		expect(node.nodeType).toEqual(document.COMMENT_NODE)
+	})
+
+	test("many nodes", () => {
+		// TODO: can I make it auto-infer?
+		const [divEl, text, pEl] = subject<[HTMLDivElement, Text, HTMLParagraphElement]>([
+			"<div>Hi</div>",
+			" there, ",
+			"<p>I am here</p>",
+		])
 
 		expect(divEl.tagName).toEqual("DIV")
-		expect(text.wholeText).toEqual(" there, ")
+		expect(text.data).toEqual(" there, ")
 		expect(pEl.tagName).toEqual("P")
 	})
 })
@@ -90,11 +124,28 @@ describe("nesting", () => {
 		const result = htmlFn("<div>Hi there, <em>mate<em>!</div>", {
 			query: {
 				emEl: "em",
+				boldEl: "bold",
 			},
 		})
-		const [divEl, { emEl }] = result
+
+		const [divEl] = result
+		const { emEl, boldEl } = lastOf(result)
+
 		expect(divEl).toBeInstanceOf(HTMLDivElement)
 		expect(emEl).toBeInstanceOf(HTMLElement)
+		expect(boldEl).toBeNull()
+	})
+
+	test("nested query works with multiple input args too", () => {
+		const result = htmlFn(["<h1>Title</h1>", "<p>Hi there, <em>mate</em>!</p>"], {
+			query: {
+				emEl: "em",
+			},
+		})
+		const [[headingEl, pEl], { emEl }] = result
+		expect(headingEl).toBeInstanceOf(HTMLHeadElement)
+		expect(pEl).toBeInstanceOf(HTMLParagraphElement)
+		expect(emEl?.textContent).toEqual("mate")
 	})
 })
 
@@ -104,5 +155,29 @@ describe("attributes", () => {
 
 		expect(button.getAttribute("type")).toEqual("button")
 		expect(button.getAttribute("aria-pressed")).toEqual("false")
+	})
+
+	test("assign callbacks", () => {
+		let clicked = false
+
+		const [button] = htmlSingleFn([
+			'<button type="button" aria-pressed="false" onclick="',
+			() => {
+				console.log("click")
+				clicked = true
+			},
+			'">Click me</button>',
+		])
+
+		//console.log("button")
+		;(button as HTMLButtonElement).click()
+
+		expect(clicked).toBe(true)
+	})
+
+	test("assign other primitives", () => {
+		const [checkbox] = htmlSingleFn(['<input type="checkbox" checked="', true, '" />'])
+
+		expect((checkbox as HTMLInputElement).getAttribute("checked")).toEqual("true")
 	})
 })
