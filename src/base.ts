@@ -1,10 +1,4 @@
-import {
-	assert,
-	type CommentPrefixedString,
-	type ElementPrefixedString,
-	type HtmlTagName,
-	type LastElementOf,
-} from "./utils.js";
+import type { CommentPrefixedString, ElementPrefixedString, HtmlTagName } from "./utils.js";
 
 export type NestedQuery = Record<string, string>;
 

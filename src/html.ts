@@ -66,24 +66,50 @@ export function htmlFn<T_Nodes extends Node[], Q extends NestedQuery>(
 	return resultNodes;
 }
 
+export type AttrValue = EventListener | number | boolean;
+
 /**
  * only create single html node
  */
 // biome-ignore lint/complexity/noBannedTypes: <explanation>
 export function htmlSingleFn<T extends Node, Q extends NestedQuery = {}>(
-	partialStrings: (string | EventListener | number | boolean)[],
+	partialStrings: (string | AttrValue)[],
 	options?: { query: Q },
 ): [T, QueryResultOf<Q>?] {
+	// reduce callback attribute
+	const markMap: Map<[string, string], EventListener> = new Map();
+	const [{ htmlSoFar: htmlString }] = reduceCallbackAttribute(partialStrings, markMap);
+
+	const [node, containerEl] = buildSingleNode(htmlString);
+
+	// re-bind function marks
+	for (const [[attrName, markName], callback] of markMap.entries()) {
+		const selector = `[${attrName}=${markName}]`;
+		const targetNode = queryContainer(containerEl, selector);
+		if (!targetNode) {
+			console.warn("failed finding element with attr:", attrName);
+			continue;
+		}
+
+		targetNode.removeAttribute(attrName);
+		targetNode.addEventListener(attrName.replace(/^on/i, ""), callback);
+	}
+
+	return [node as unknown as T];
+}
+
+function reduceCallbackAttribute(
+	partialStrings: (string | AttrValue)[],
+	markMap: Map<[string, string], EventListener>,
+) {
 	const context: { htmlSoFar: string; insideTag: boolean; startAttr: '"' | "'" | null; lastAttrName: string | null } = {
 		insideTag: false,
 		startAttr: null,
 		lastAttrName: null,
 		htmlSoFar: "",
 	};
-	const markMap: Map<[string, string], EventListener> = new Map();
 
-	// reduce callback attribute
-	const { htmlSoFar: htmlString } = partialStrings.reduce((memo, partial) => {
+	const reduceResult = partialStrings.reduce((memo, partial) => {
 		let { htmlSoFar, insideTag, startAttr, lastAttrName } = memo;
 
 		// part of html chunk
@@ -147,7 +173,7 @@ export function htmlSingleFn<T extends Node, Q extends NestedQuery = {}>(
 		}
 		// othe primitives, keep on chunking as string
 		else {
-			assert(insideTag && startAttr && lastAttrName, "only allowed as an attribute");
+			assert(insideTag && startAttr && lastAttrName, `${partial} is only allowed as an attribute`);
 
 			htmlSoFar += String(partial);
 		}
@@ -155,24 +181,7 @@ export function htmlSingleFn<T extends Node, Q extends NestedQuery = {}>(
 		return { htmlSoFar, insideTag, startAttr, lastAttrName };
 	}, context);
 
-	//console.log("🚀 ~ file: html.ts:212 ~ htmlString:", htmlString);
-
-	const [node, containerEl] = buildSingleNode(htmlString);
-
-	// re-bind function marks
-	for (const [[attrName, markName], callback] of markMap.entries()) {
-		const selector = `[${attrName}=${markName}]`;
-		const targetNode = queryContainer(containerEl, selector);
-		if (!targetNode) {
-			console.warn("failed finding element with attr:", attrName);
-			continue;
-		}
-
-		targetNode.removeAttribute(attrName);
-		targetNode.addEventListener(attrName.replace(/^on/i, ""), callback);
-	}
-
-	return [node as unknown as T];
+	return [reduceResult, markMap] as const;
 }
 
 function htmlFnWithMultipleArgs<T extends Node[], Q extends NestedQuery>(
