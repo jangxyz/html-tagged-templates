@@ -2,7 +2,7 @@
   // node_modules/@tsconfig/recommended/tsconfig.json
   "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
-    //
+    "target": "ES2017",
   },
   "include": ["./src/**.ts", "./test.global.d.ts"]
 }
