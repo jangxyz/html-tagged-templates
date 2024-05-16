@@ -1,5 +1,5 @@
-import type { ElementPrefixedString } from "./utils";
-import { htmlSingleFn, type AttrValue } from "./html";
+import { htmlSingleFn, type AttrValue } from "./html_single";
+//import type { ElementPrefixedString } from "./utils";
 
 //interface MyTemplateStringsArray extends ReadonlyArray<string> {
 //	readonly raw: readonly string[];
@@ -16,7 +16,7 @@ interface DivTemplateStringsArray extends TemplateStringsArray {
 //// overload - default
 //function taggedTemplates(strings: MyTemplateStringsArray, ...values: AttrValue[]): HTMLElement;
 //// actual implementation
-function taggedTemplates(strings: TemplateStringsArray, ...values: AttrValue[]): HTMLElement {
+function htmlTaggedTemplates(strings: TemplateStringsArray, ...values: AttrValue[]): HTMLElement {
 	// template string always start with a string, and ends with string.
 	// hence, length of `strings` is always larger than length of `values`.
 	const partialStrings: (string | AttrValue)[] = [];
@@ -30,8 +30,8 @@ function taggedTemplates(strings: TemplateStringsArray, ...values: AttrValue[]):
 		}
 	}
 
-	const [result] = htmlSingleFn(partialStrings);
+	const result = htmlSingleFn(partialStrings);
 	return result as HTMLElement;
 }
 
-export { taggedTemplates as html };
+export { htmlTaggedTemplates as html };

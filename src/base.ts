@@ -9,6 +9,10 @@ export type QueryOptions<Q extends NestedQuery> = {
 
 export type ContainerElement = HTMLElement | HTMLTemplateElement;
 
+/**
+ * Perform `querySelector` on query element, whether it is HTMLElement or HTMLTemplateElement.
+ * @see {@link queryAllContainer} function for `querySelectorAll` version.
+ */
 export function queryContainer<T extends HTMLElement = HTMLElement>(containerEl: ContainerElement, selector: string) {
 	let queryEl: HTMLElement | DocumentFragment;
 	if (containerEl instanceof HTMLTemplateElement) {
@@ -20,6 +24,10 @@ export function queryContainer<T extends HTMLElement = HTMLElement>(containerEl:
 	return queryEl.querySelector<T>(selector);
 }
 
+/**
+ * Perform `querySelectorAll` on query element, whether it is HTMLElement or HTMLTemplateElement.
+ * @see {@link queryContainer} function for `querySelector`.
+ */
 export function queryAllContainer<T extends HTMLElement = HTMLElement>(
 	containerEl: ContainerElement,
 	selector: string,
