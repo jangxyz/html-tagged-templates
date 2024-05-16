@@ -1,8 +1,7 @@
-//import { HTMLCollection } from "happy-dom"
 //import { GlobalRegistrator } from "@happy-dom/global-registrator"
 //GlobalRegistrator.register({ url: "http://localhost:3000" })
 
-import { beforeEach, describe, expect, expectTypeOf, test } from "vitest"
+import { beforeAll, beforeEach, describe, expect, expectTypeOf, test } from "vitest"
 import { htmlFn, htmlSingleFn, htmlWithArrayArgsFn, htmlWithQueryFn } from "./index.js"
 
 test("is a function", () => {
@@ -11,26 +10,31 @@ test("is a function", () => {
 	expectTypeOf<Function>(htmlFn)
 })
 
-test("returns items of elements", () => {
-	const result = htmlFn("<div>Hi there</div>")
-	expect(result).toHaveLength(1)
+describe("htmlFn returing list-like", () => {
+	let subject = htmlFn
+	beforeAll(() => {
+		subject = htmlFn
+	})
 
-	const [el] = result
-	expect(el).toBeInstanceOf(HTMLElement)
-})
+	test("returns items of elements", () => {
+		const result = subject("<div>Hi there</div>")
+		expect(result).toHaveLength(1)
 
-test.skip("returns list of elements", () => {
-	const result = htmlFn("<div>Hi there</div>")
-	expect(result).toBeInstanceOf(NodeList)
+		const [el] = result
+		expect(el).toBeInstanceOf(HTMLElement)
+	})
+
+	test.skip("returns list of elements", () => {
+		const result = subject("<div>Hi there</div>")
+		expect(result).toBeInstanceOf(NodeList)
+	})
 })
 
 describe("edge cases", () => {
 	// NOTE this fails in DOM, but not in happy-dom
 	test("can render <td>", () => {
-		const result = htmlFn("<td>Hi there</td>")
-		expect(result).toHaveLength(1)
+		const el = htmlSingleFn("<td>Hi there</td>")
 
-		const [el] = result
 		expect(el).toBeInstanceOf(HTMLTableCellElement)
 		expect((el as HTMLElement).tagName).toEqual("TD")
 	})
@@ -81,7 +85,6 @@ describe("return many with array of elements as input", () => {
 	let subject: typeof htmlWithArrayArgsFn
 	beforeEach(() => {
 		subject = htmlWithArrayArgsFn
-		//subject = htmlFn as unknown as typeof htmlFnWithArrayArgs
 	})
 
 	test("single item - element", () => {
@@ -119,16 +122,9 @@ describe("return many with array of elements as input", () => {
 	})
 })
 
-//test.skip("last argument may be an option", () => {
-//	const result = htmlFn("<div>Hi there</div>", {})
-//	const [el] = result
-//	expect(el).toBeInstanceOf(HTMLElement)
-//	expect(result).toHaveLength(1)
-//})
-
 describe("nesting", () => {
 	test("create nested element", () => {
-		const [divEl] = htmlFn("<div>Hi there, <em>mate<em>!</div>")
+		const divEl = htmlSingleFn("<div>Hi there, <em>mate<em>!</div>")
 		expect(divEl).toBeInstanceOf(HTMLDivElement)
 
 		const emEl = (divEl as HTMLElement).querySelector("em")
@@ -156,7 +152,7 @@ describe("nesting", () => {
 	})
 
 	//test.skip("nested query works with multiple input args too", () => {
-	//	const result = htmlFn(["<h1>Title</h1>", "<p>Hi there, <em>mate</em>!</p>"], {
+	//	const result = htmlwithQueryFn(["<h1>Title</h1>", "<p>Hi there, <em>mate</em>!</p>"], {
 	//		query: {
 	//			emEl: "em",
 	//		},
@@ -174,8 +170,8 @@ describe("nesting", () => {
 
 describe("attributes", () => {
 	test("assign attributes properly", () => {
-		const result = htmlFn('<button type="button" aria-pressed="false">Click me</button>')
-		const [button] = result as [HTMLButtonElement]
+		const result = htmlSingleFn('<button type="button" aria-pressed="false">Click me</button>')
+		const button = result as HTMLButtonElement
 
 		expect(button.getAttribute("type")).toEqual("button")
 		expect(button.getAttribute("aria-pressed")).toEqual("false")
@@ -184,10 +180,10 @@ describe("attributes", () => {
 	test("assign callbacks", () => {
 		let clicked = false
 
-		const [button] = htmlSingleFn([
+		const button = htmlSingleFn([
 			'<button type="button" aria-pressed="false" onclick="',
 			() => {
-				console.log("click")
+				//console.log("click")
 				clicked = true
 			},
 			'">Click me</button>',
@@ -200,7 +196,7 @@ describe("attributes", () => {
 	})
 
 	test("assign other primitives", () => {
-		const [checkbox] = htmlSingleFn(['<input type="checkbox" checked="', true, '" />'])
+		const checkbox = htmlSingleFn(['<input type="checkbox" checked="', true, '" />'])
 
 		expect((checkbox as HTMLInputElement).getAttribute("checked")).toEqual("true")
 	})

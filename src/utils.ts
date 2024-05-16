@@ -2,6 +2,8 @@ export type HtmlTagName = keyof HTMLElementTagNameMap;
 
 export type HtmlElementPrefix<TagName extends HtmlTagName> = `<${TagName}>` | `<${TagName} ` | `<${TagName}/>`;
 export type ElementPrefixedString<TagName extends HtmlTagName> = `${HtmlElementPrefix<TagName>}${string}`;
+
+//
 export type CommentPrefixedString = `<!--${string}`;
 //type TypedHtmlString<T extends string> = T extends HtmlTagName ? HtmlPrefix<"div"> : Text;
 
