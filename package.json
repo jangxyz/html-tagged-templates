@@ -1,4 +1,21 @@
 {
+  "name": "@jangxyz/html-tagged-templates",
+  "version": "0.1.0",
+  "description": "HTML tagged templates",
+  "main": "dist/index.js",
+  "keywords": [
+    "HTML", "tagged templates"
+  ],
+  "author": "Kim, Jang-hwan <janghwan@gmail.com>",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jangxyz/html-tagged-templates.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jangxyz/html-tagged-templates/issues"
+  },
+  "homepage": "https://github.com/jangxyz/html-tagged-templates#readme",
   "scripts": {
     "test": "vitest --typecheck"
   },
