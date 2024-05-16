@@ -2,8 +2,11 @@
   // node_modules/@tsconfig/recommended/tsconfig.json
   "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
     "outDir": "dist",
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    //
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "skipLibCheck": true,

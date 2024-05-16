@@ -1,4 +1,4 @@
-import { htmlSingleFn, type AttrValue } from "./html_single";
+import { htmlSingleFn, type AttrValue } from "./html_single.js";
 //import type { ElementPrefixedString } from "./utils";
 
 //interface MyTemplateStringsArray extends ReadonlyArray<string> {
