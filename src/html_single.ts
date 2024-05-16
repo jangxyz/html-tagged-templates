@@ -1,6 +1,5 @@
-import { assert } from "vitest";
-import { buildSingleNode, queryContainer, type NestedQuery } from "./base.js";
-import type { QueryResultOf } from "./html_with_query_option.js";
+import { buildSingleNode, queryContainer } from "./base.js";
+import { assert } from "./utils.js";
 
 export type AttrValue = EventListener | number | boolean;
 

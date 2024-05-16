@@ -2,7 +2,7 @@
 //GlobalRegistrator.register({ url: "http://localhost:3000" })
 
 import { beforeAll, beforeEach, describe, expect, expectTypeOf, test } from "vitest"
-import { htmlFn, htmlSingleFn, htmlWithArrayArgsFn, htmlWithQueryFn } from "./index.js"
+import { htmlFn, htmlSingleFn, htmlMultipleFn, htmlWithQueryFn } from "./index.js"
 
 test("is a function", () => {
 	expect(htmlFn).toBeInstanceOf(Function)
@@ -42,14 +42,14 @@ describe("edge cases", () => {
 
 describe("returning many", () => {
 	test("returns many elements", () => {
-		const [divEl, pEl] = htmlWithArrayArgsFn(["<div>Hi there,</div>", "<p>I am here</p>"])
+		const [divEl, pEl] = htmlMultipleFn(["<div>Hi there,</div>", "<p>I am here</p>"])
 
 		expect((divEl as HTMLElement).tagName).toEqual("DIV")
 		expect((pEl as HTMLElement).tagName).toEqual("P")
 	})
 
 	test("returns multiples of elements and nodes", () => {
-		const [divEl, text, pEl] = htmlWithArrayArgsFn(["<div>Hi</div>", " there, ", "<p>I am here</p>"])
+		const [divEl, text, pEl] = htmlMultipleFn(["<div>Hi</div>", " there, ", "<p>I am here</p>"])
 
 		expect((divEl as HTMLElement).tagName).toEqual("DIV")
 		expect((text as Text).data).toEqual(" there, ")
@@ -58,7 +58,7 @@ describe("returning many", () => {
 
 	describe("with types", () => {
 		test("returns many elements", () => {
-			const [divEl, pEl] = htmlWithArrayArgsFn<[HTMLDivElement, HTMLParagraphElement]>([
+			const [divEl, pEl] = htmlMultipleFn<[HTMLDivElement, HTMLParagraphElement]>([
 				"<div>Hi there,</div>",
 				"<p>I am here</p>",
 			])
@@ -68,7 +68,7 @@ describe("returning many", () => {
 		})
 
 		test("returns multiples of elements and nodes", () => {
-			const [divEl, text, pEl] = htmlWithArrayArgsFn<[HTMLDivElement, Text, HTMLParagraphElement]>([
+			const [divEl, text, pEl] = htmlMultipleFn<[HTMLDivElement, Text, HTMLParagraphElement]>([
 				"<div>Hi</div>",
 				" there, ",
 				"<p>I am here</p>",
@@ -82,9 +82,9 @@ describe("returning many", () => {
 })
 
 describe("return many with array of elements as input", () => {
-	let subject: typeof htmlWithArrayArgsFn
+	let subject: typeof htmlMultipleFn
 	beforeEach(() => {
-		subject = htmlWithArrayArgsFn
+		subject = htmlMultipleFn
 	})
 
 	test("single item - element", () => {

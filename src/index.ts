@@ -1,4 +1,4 @@
-export { htmlFn } from "./html.js";
+export { htmlFn } from "./html_unified.js";
 export { htmlSingleFn } from "./html_single.js";
-export { htmlWithArrayArgsFn } from "./html_with_array_args.js";
+export { htmlMultipleFn } from "./html_multiple.js";
 export { htmlWithQueryFn } from "./html_with_query_option.js";

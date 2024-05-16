@@ -1,6 +1,5 @@
-import { buildChildNodes, buildSingleNode, queryContainer } from "./base.js";
-import { assert } from "./utils.js";
-import type { htmlWithArrayArgsFn } from "./html_with_array_args.js";
+import { buildChildNodes, buildSingleNode } from "./base.js";
+import type { htmlMultipleFn } from "./html_multiple.js";
 import type { QueryResultOf } from "./html_with_query_option.js";
 
 type NestedQuery = Record<string, string>;
@@ -23,12 +22,12 @@ export function htmlFn<T extends Node[], Q extends NestedQuery>(
 	options: { query: Q },
 ): [...T, QueryResultOf<Q>];
 // overload - string array
-export function htmlFn(htmlStrings: string[]): ReturnType<typeof htmlWithArrayArgsFn>;
+export function htmlFn(htmlStrings: string[]): ReturnType<typeof htmlMultipleFn>;
 // overload - string array + query option
 export function htmlFn<Q extends NestedQuery>(
 	htmlStrings: string[],
 	options: { query: Q },
-): [ReturnType<typeof htmlWithArrayArgsFn>, QueryResultOf<Q>];
+): [ReturnType<typeof htmlMultipleFn>, QueryResultOf<Q>];
 // overload - default options
 export function htmlFn<T extends Node[], Q extends NestedQuery>(
 	htmlString: string,
@@ -42,10 +41,8 @@ export function htmlFn<T_Nodes extends Node[], Q extends NestedQuery>(
 	// input as array
 	if (Array.isArray(htmlString)) {
 		//const resultNodes = htmlFnWithArrayArgs<T>(htmlString);
-		let containerEl: ContainerElement | undefined = undefined;
 		const resultNodes = htmlString.map((str) => {
 			const result = buildSingleNode<T_Nodes[number]>(str);
-			containerEl = result[1];
 			return result[0];
 		}) as T_Nodes;
 

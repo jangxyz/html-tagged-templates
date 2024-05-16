@@ -57,16 +57,6 @@ export function buildSingleNode(htmlString: string): [Text, ContainerElement];
 export function buildSingleNode<T extends Node>(htmlString: string): [T, ContainerElement];
 // actual implementation
 export function buildSingleNode<T extends Node>(htmlString: string): [T, ContainerElement] {
-	//const _containerEl = containerEl ?? document.createElement("div");
-	//_containerEl.innerHTML = htmlString;
-	//
-	//const childNodes = _containerEl.childNodes;
-	//if (childNodes.length > 1) {
-	//	throw new Error("has more than one node");
-	//}
-	//
-	//return [childNodes[0] as unknown as T, _containerEl];
-
 	const [resultNodes, _containerEl] = buildChildNodes(htmlString);
 	if (resultNodes.length > 1) {
 		throw new Error("has more than one node");

@@ -20,6 +20,17 @@ export type QueryAllResultOf<Q extends NestedQuery> = {
 
 /**
  * Accept query options.
+ *
+ * @example
+ *
+ * const {
+ *   element: ulEl,
+ *   queryAll: { items },
+ *   query: { firstItem },
+ * } = htmlWithQueryFn(`<ul><li>first item</li><li>second item</li><ul>`, {
+ *   queryAll: { items: 'li' }
+ *   query: { firstItem: 'li:first-of-type' }
+ * })
  */
 // overload: both 'query' and 'queryAll'
 export function htmlWithQueryFn<T extends Node, Q1 extends NestedQuery, Q2 extends NestedQuery>(
@@ -57,7 +68,6 @@ export function htmlWithQueryFn<T extends Node, Q extends NestedQuery>(
 	query?: QueryResultOf<Q>;
 	queryAll?: QueryAllResultOf<Q>;
 } {
-	//const [resultNodes, containerEl] = buildChildNodes<T>(htmlString);
 	const [resultNode, containerEl] = buildSingleNode<T>(htmlString);
 
 	const queryResults = buildQueryResult<Q>(containerEl, options);

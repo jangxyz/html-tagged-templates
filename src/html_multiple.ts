@@ -7,21 +7,25 @@ import type { CommentPrefixedString, ElementPrefixedString, HtmlTagName } from "
 
 /**
  * Accept html as array of strings.
+ *
+ * @example
+ *
+ * const [divEl, pEl] = htmlMultipleFn(["<div>Hi there,</div>", "<p>I am here</p>"])
  */
 // overload: single-element
-export function htmlWithArrayArgsFn<T_Str extends HtmlTagName>(
+export function htmlMultipleFn<T_Str extends HtmlTagName>(
 	htmlString: [ElementPrefixedString<T_Str>],
 ): [HTMLElementTagNameMap[T_Str]];
 // overload: single-comment
-export function htmlWithArrayArgsFn(htmlString: [CommentPrefixedString]): [Comment];
+export function htmlMultipleFn(htmlString: [CommentPrefixedString]): [Comment];
 // overload: single-text
-export function htmlWithArrayArgsFn(htmlString: [string]): [Text];
+export function htmlMultipleFn(htmlString: [string]): [Text];
 // overload: single-any
-export function htmlWithArrayArgsFn<T_Node extends Node>(htmlStrings: [string]): [T_Node];
+export function htmlMultipleFn<T_Node extends Node>(htmlStrings: [string]): [T_Node];
 // overload: multiple any
-export function htmlWithArrayArgsFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes;
+export function htmlMultipleFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes;
 // acutla implementation
-export function htmlWithArrayArgsFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes {
+export function htmlMultipleFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes {
 	if (htmlStrings.length === 0) return [] as unknown as T_Nodes;
 
 	if (htmlStrings.length === 1) {
