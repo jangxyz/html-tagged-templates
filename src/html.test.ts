@@ -1,7 +1,6 @@
-import { HTMLCollection } from "happy-dom"
-
-import { GlobalRegistrator } from "@happy-dom/global-registrator"
-GlobalRegistrator.register({ url: "http://localhost:3000" })
+//import { HTMLCollection } from "happy-dom"
+//import { GlobalRegistrator } from "@happy-dom/global-registrator"
+//GlobalRegistrator.register({ url: "http://localhost:3000" })
 
 import { beforeEach, describe, expect, expectTypeOf, test } from "vitest"
 
@@ -24,6 +23,18 @@ test("returns items of elements", () => {
 test.skip("returns list of elements", () => {
 	const result = htmlFn("<div>Hi there</div>")
 	expect(result).toBeInstanceOf(NodeList)
+})
+
+describe("edge cases", () => {
+	// NOTE this fails in DOM, but not in happy-dom
+	test("can render <td>", () => {
+		const result = htmlFn("<td>Hi there</td>")
+		expect(result).toHaveLength(1)
+
+		const [el] = result
+		expect(el).toBeInstanceOf(HTMLTableCellElement)
+		expect((el as HTMLElement).tagName).toEqual("TD")
+	})
 })
 
 describe("returning many", () => {
@@ -143,7 +154,7 @@ describe("nesting", () => {
 			},
 		})
 		const [[headingEl, pEl], { emEl }] = result
-		expect(headingEl).toBeInstanceOf(HTMLHeadElement)
+		expect(headingEl).toBeInstanceOf(HTMLHeadingElement)
 		expect(pEl).toBeInstanceOf(HTMLParagraphElement)
 		expect(emEl?.textContent).toEqual("mate")
 	})

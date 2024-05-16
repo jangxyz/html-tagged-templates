@@ -279,25 +279,39 @@ function buildSingleNode(htmlString: string, containerEl?: HTMLElement): [Text, 
 function buildSingleNode<T extends Node>(htmlString: string, containerEl?: HTMLElement): [T, HTMLElement];
 // impl.
 function buildSingleNode<T extends Node>(htmlString: string, containerEl?: HTMLElement): [T, HTMLElement] {
-	const _containerEl = containerEl ?? document.createElement("div");
-	_containerEl.innerHTML = htmlString;
+	//const _containerEl = containerEl ?? document.createElement("div");
+	//_containerEl.innerHTML = htmlString;
+	//
+	//const childNodes = _containerEl.childNodes;
+	//if (childNodes.length > 1) {
+	//	throw new Error("has more than one node");
+	//}
+	//
+	//return [childNodes[0] as unknown as T, _containerEl];
 
-	const childNodes = _containerEl.childNodes;
-	if (childNodes.length > 1) {
+	const [resultNodes, _containerEl] = buildChildNodes(htmlString, containerEl);
+	if (resultNodes.length > 1) {
 		throw new Error("has more than one node");
 	}
 
-	return [childNodes[0] as unknown as T, _containerEl];
+	return [resultNodes[0] as unknown as T, _containerEl];
 }
 
-function buildChildNodes<T extends Node[]>(htmlString: string): [T, HTMLElement] {
-	const containerEl = document.createElement("div");
-	containerEl.innerHTML = htmlString;
+function buildChildNodes<T extends Node[]>(htmlString: string, containerEl?: HTMLElement): [T, HTMLElement] {
+	//// 1. build by `document.createElement`
+	//const _containerEl = containerEl ?? document.createElement("div");
+	//_containerEl.innerHTML = htmlString;
+	//
+	//const childNodes = _containerEl.childNodes;
+	//const resultNodes = [...childNodes] as unknown as T;
+	//
+	//return [resultNodes, _containerEl] as const;
 
-	const childNodes = containerEl.childNodes;
-	const resultNodes = [...childNodes] as unknown as T;
-
-	return [resultNodes, containerEl] as const;
+	// 2. build by <template>
+	const template = document.createElement("template");
+	template.innerHTML = htmlString;
+	const resultNodes = [...template.content.childNodes] as unknown as T;
+	return [resultNodes, template];
 }
 
 function buildQueryResult<Q extends NestedQuery>(containerEl: HTMLElement, query: Q) {
