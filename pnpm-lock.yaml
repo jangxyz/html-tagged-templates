@@ -17,9 +17,6 @@ importers:
       '@tsconfig/recommended':
         specifier: ^1.0.6
         version: 1.0.6
-      happy-dom:
-        specifier: ^14.11.0
-        version: 14.11.0
       jsdom:
         specifier: ^24.0.0
         version: 24.0.0

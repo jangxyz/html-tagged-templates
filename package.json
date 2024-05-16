@@ -1,22 +1,16 @@
 {
   "name": "@jangxyz/html-tagged-templates",
-  "version": "0.1.0",
   "description": "HTML tagged templates",
-  "main": "dist/index.js",
   "keywords": [
     "HTML",
     "tagged templates"
   ],
+  "repository": "https://github.com/jangxyz/html-tagged-templates",
   "author": "Kim, Jang-hwan <janghwan@gmail.com>",
+  "version": "0.1.0",
   "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jangxyz/html-tagged-templates.git"
-  },
-  "bugs": {
-    "url": "https://github.com/jangxyz/html-tagged-templates/issues"
-  },
-  "homepage": "https://github.com/jangxyz/html-tagged-templates#readme",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "vitest --typecheck"
@@ -25,10 +19,14 @@
     "@biomejs/biome": "1.7.3",
     "@happy-dom/global-registrator": "^14.11.0",
     "@tsconfig/recommended": "^1.0.6",
-    "happy-dom": "^14.11.0",
     "jsdom": "^24.0.0",
     "typescript": "^5.4.5",
     "vite": "^5.2.11",
     "vitest": "^1.6.0"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/jangxyz/html-tagged-templates/issues"
+  },
+  "homepage": "https://github.com/jangxyz/html-tagged-templates#readme",
+  "type": "module"
 }

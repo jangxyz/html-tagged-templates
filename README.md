@@ -1,11 +1,13 @@
-
 # HTML tagged templates
 
-Build DOM HTML elements with html`` tagged templates.
+Build DOM HTML elements with html`` tagged templates, plus more. No dependencies.
 
 ```javascript
 import { html } from '@jangxyz/html-tagged-templates'
-const element = html`<div>element</div>`
+const element = html`<div>Let's go JavaScript</div>`
+
+console.log(element intanceof HTMLElement) // true
+console.log(element.textContent) // "Let's go JavaScript"
 ```
 
 ## Install
@@ -16,8 +18,30 @@ npm install @jangxyz/html-tagged-templates
 
 ## Usage
 
+Nested elements work.
+
+```javascript
+html`<div>
+  I am an element, and this is a 
+  <button>button</button>
+</div>`
+```
+
+Pass in attributes, including event callbacks.
+
+```javascript
+const checkbox = html`<input 
+  type="checkbox" 
+  checked="${true}" 
+  onchange="${(event) => console.log("change:", event.target.checked)}"
+/>`
+```
+
+Note all attributes should be surrounded with quotes -- both single and double quotes are allowed.
 
 ## Others
+
+In case you feed tagged template literals is too limited, use the functions underneath directly.
 
 ### `htmlSingleFn`
 
@@ -32,11 +56,10 @@ const trEl = htmlSingleFn(`<tr>
 </tr>`)
 ```
 
-To access elements inside nested the outermost element, see [`htmlWithQueryFn`].
+To access elements inside nested the outermost element, see [htmlWithQueryFn](#user-content-htmlwithqueryfn).
 
 
 Multiple string arguments result into a single element. You can pass in attributes values, including event callbacks.
-Note all attributes should be surrounded with quotes -- both single and double quotes are allowed.
 
 ```javascript
 const button = htmlSingleFn([
@@ -71,5 +94,4 @@ const {
 
 console.log(firstItem.textContent) // 'first item'
 console.log(items.length) // 2
-
 ```
