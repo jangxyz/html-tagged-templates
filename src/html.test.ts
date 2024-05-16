@@ -3,8 +3,7 @@
 //GlobalRegistrator.register({ url: "http://localhost:3000" })
 
 import { beforeEach, describe, expect, expectTypeOf, test } from "vitest"
-
-import { htmlFn, htmlWithArrayArgsFn, htmlWithQueryFn, htmlSingleFn, lastOf } from "./html.js"
+import { htmlFn, htmlSingleFn, htmlWithArrayArgsFn, htmlWithQueryFn } from "./index.js"
 
 test("is a function", () => {
 	expect(htmlFn).toBeInstanceOf(Function)

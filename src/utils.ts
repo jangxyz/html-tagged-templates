@@ -15,3 +15,7 @@ export function assert(condition: unknown, errorMsg: string): asserts condition 
 		throw new Error(errorMsg);
 	}
 }
+
+export function lastOf<T extends readonly unknown[]>(tuple: T): LastElementOf<T> {
+	return tuple[tuple.length - 1] as LastElementOf<T>;
+}
