@@ -1,7 +1,14 @@
+import {
+	assert,
+	type CommentPrefixedString,
+	type ElementPrefixedString,
+	type HtmlTagName,
+	type LastElementOf,
+} from "./utils.js";
+
 type NestedQuery = Record<string, string>;
 
 type Options<Q extends NestedQuery> = {
-	//returns: "element" | "node" | ("element" | "node")[];
 	query: Q;
 };
 
@@ -9,19 +16,7 @@ type QueryResultOf<Q extends NestedQuery> = {
 	[K in keyof Q]: HTMLElement | null;
 };
 
-// type - html tags
-
-type HtmlTagName = keyof HTMLElementTagNameMap;
-
-type HtmlElementPrefix<TagName extends HtmlTagName> = `<${TagName}>` | `<${TagName} ` | `<${TagName}/>`;
-type ElementPrefixedString<TagName extends HtmlTagName> = `${HtmlElementPrefix<TagName>}${string}`;
-type CommentPrefixedString = `<!--${string}`;
-//type TypedHtmlString<T extends string> = T extends HtmlTagName ? HtmlPrefix<"div"> : Text;
-
-//export function htmlFn<T extends Node[]>(htmlString: string, options: Partial<Options>): [...T, object];
-//export function htmlFn<T extends Node[], Q extends NestedQuery>(htmlString: string, options: Omit<Options<Q>, "query">): T;
-
-type LastElementOf<T extends readonly unknown[]> = T extends readonly [...unknown[], infer Last] ? Last : never;
+type ContainerElement = HTMLElement | HTMLTemplateElement;
 
 /**
  * Create HTML elements
@@ -53,9 +48,9 @@ export function htmlFn<T_Nodes extends Node[], Q extends NestedQuery>(
 	// input as array
 	if (Array.isArray(htmlString)) {
 		//const resultNodes = htmlFnWithArrayArgs<T>(htmlString);
-		let containerEl: HTMLElement | undefined = undefined;
+		let containerEl: ContainerElement | undefined = undefined;
 		const resultNodes = htmlString.map((str) => {
-			const result = buildSingleNode<T_Nodes[number]>(str, containerEl);
+			const result = buildSingleNode<T_Nodes[number]>(str);
 			containerEl = result[1];
 			return result[0];
 		}) as T_Nodes;
@@ -101,10 +96,8 @@ export function htmlFnWithArrayArgs<T_Nodes extends Node[]>(htmlStrings: string[
 		return [result] as T_Nodes;
 	}
 
-	let containerEl: HTMLElement | undefined = undefined;
 	const results = htmlStrings.map((str) => {
-		const result = buildSingleNode<T_Nodes[number]>(str, containerEl);
-		containerEl = result[1];
+		const result = buildSingleNode<T_Nodes[number]>(str);
 		return result[0];
 	}) as T_Nodes;
 	return results;
@@ -126,16 +119,11 @@ export function htmlFnWithArrayArgs<T_Nodes extends Node[]>(htmlStrings: string[
 /**
  * only create single html node
  */
-
 // biome-ignore lint/complexity/noBannedTypes: <explanation>
 export function htmlSingleFn<T extends Node, Q extends NestedQuery = {}>(
 	partialStrings: (string | EventListener | number | boolean)[],
 	options?: { query: Q },
 ): [T, QueryResultOf<Q>?] {
-	//
-
-	// reduce callback attribute
-
 	const context: { htmlSoFar: string; insideTag: boolean; startAttr: '"' | "'" | null; lastAttrName: string | null } = {
 		insideTag: false,
 		startAttr: null,
@@ -144,6 +132,7 @@ export function htmlSingleFn<T extends Node, Q extends NestedQuery = {}>(
 	};
 	const markMap: Map<[string, string], EventListener> = new Map();
 
+	// reduce callback attribute
 	const { htmlSoFar: htmlString } = partialStrings.reduce((memo, partial) => {
 		let { htmlSoFar, insideTag, startAttr, lastAttrName } = memo;
 
@@ -223,7 +212,7 @@ export function htmlSingleFn<T extends Node, Q extends NestedQuery = {}>(
 	// re-bind function marks
 	for (const [[attrName, markName], callback] of markMap.entries()) {
 		const selector = `[${attrName}=${markName}]`;
-		const targetNode = containerEl.querySelector(selector);
+		const targetNode = queryContainer(containerEl, selector);
 		if (!targetNode) {
 			console.warn("failed finding element with attr:", attrName);
 			continue;
@@ -236,12 +225,6 @@ export function htmlSingleFn<T extends Node, Q extends NestedQuery = {}>(
 	return [node as unknown as T];
 
 	///
-
-	function assert(condition: unknown, errorMsg: string): asserts condition {
-		if (!condition) {
-			throw new Error(errorMsg);
-		}
-	}
 }
 
 /**
@@ -269,16 +252,15 @@ function hasQueryOption<Q extends NestedQuery>(options?: Partial<Options<Q>>): o
 // overload: HTMLElement
 function buildSingleNode<T extends HtmlTagName>(
 	htmlString: ElementPrefixedString<T>,
-	containerEl?: HTMLElement,
-): [HTMLElementTagNameMap[T], HTMLElement];
+): [HTMLElementTagNameMap[T], ContainerElement];
 // overload: Comment
-function buildSingleNode(htmlString: CommentPrefixedString, containerEl?: HTMLElement): [Comment, HTMLElement];
+function buildSingleNode(htmlString: CommentPrefixedString): [Comment, ContainerElement];
 // overload: other - Text
-function buildSingleNode(htmlString: string, containerEl?: HTMLElement): [Text, HTMLElement];
+function buildSingleNode(htmlString: string): [Text, ContainerElement];
 // overload: default
-function buildSingleNode<T extends Node>(htmlString: string, containerEl?: HTMLElement): [T, HTMLElement];
+function buildSingleNode<T extends Node>(htmlString: string): [T, ContainerElement];
 // impl.
-function buildSingleNode<T extends Node>(htmlString: string, containerEl?: HTMLElement): [T, HTMLElement] {
+function buildSingleNode<T extends Node>(htmlString: string): [T, ContainerElement] {
 	//const _containerEl = containerEl ?? document.createElement("div");
 	//_containerEl.innerHTML = htmlString;
 	//
@@ -289,7 +271,7 @@ function buildSingleNode<T extends Node>(htmlString: string, containerEl?: HTMLE
 	//
 	//return [childNodes[0] as unknown as T, _containerEl];
 
-	const [resultNodes, _containerEl] = buildChildNodes(htmlString, containerEl);
+	const [resultNodes, _containerEl] = buildChildNodes(htmlString);
 	if (resultNodes.length > 1) {
 		throw new Error("has more than one node");
 	}
@@ -297,27 +279,26 @@ function buildSingleNode<T extends Node>(htmlString: string, containerEl?: HTMLE
 	return [resultNodes[0] as unknown as T, _containerEl];
 }
 
-function buildChildNodes<T extends Node[]>(htmlString: string, containerEl?: HTMLElement): [T, HTMLElement] {
-	//// 1. build by `document.createElement`
-	//const _containerEl = containerEl ?? document.createElement("div");
-	//_containerEl.innerHTML = htmlString;
-	//
-	//const childNodes = _containerEl.childNodes;
-	//const resultNodes = [...childNodes] as unknown as T;
-	//
-	//return [resultNodes, _containerEl] as const;
+function buildChildNodes<T extends Node[]>(htmlString: string, container?: ContainerElement): [T, ContainerElement] {
+	const containerEl = container ?? document.createElement("template");
 
-	// 2. build by <template>
-	const template = document.createElement("template");
-	template.innerHTML = htmlString;
-	const resultNodes = [...template.content.childNodes] as unknown as T;
-	return [resultNodes, template];
+	// assign innerHTML
+	containerEl.innerHTML = htmlString;
+
+	let resultNodes: NodeListOf<ChildNode>;
+	if (containerEl instanceof HTMLTemplateElement) {
+		resultNodes = containerEl.content.childNodes;
+	} else {
+		resultNodes = containerEl.childNodes;
+	}
+
+	return [[...resultNodes] as unknown as T, containerEl];
 }
 
-function buildQueryResult<Q extends NestedQuery>(containerEl: HTMLElement, query: Q) {
+function buildQueryResult<Q extends NestedQuery>(containerEl: ContainerElement, query: Q) {
 	const queryResult: QueryResultOf<Q> = Object.entries(query).reduce(
 		(memo, [name, selector]) => {
-			memo[name as keyof Q] = containerEl.querySelector<HTMLElement>(selector);
+			memo[name as keyof Q] = queryContainer(containerEl, selector);
 			return memo;
 		},
 		{} as Record<keyof Q, HTMLElement | null>,
@@ -332,16 +313,27 @@ export function lastOf<T extends readonly unknown[]>(tuple: T): LastElementOf<T>
 
 ///
 
-function htmlFnWithMultipleArgs<T extends Node[]>(
+function htmlFnWithMultipleArgs<T extends Node[], Q extends NestedQuery>(
 	htmlString: string,
-	...moreArgs: string[] | [...string[], options: Partial<Options>]
+	...moreArgs: string[] | [...string[], options: Partial<Options<Q>>]
 ): [...T, object?] {
 	return [] as unknown as [...T, object?];
 }
 
-export function htmlNodeFn(string: string): NodeList {
+function htmlNodeFn(string: string): NodeList {
 	const el = document.createElement("div");
 	el.innerHTML = string;
 
 	return el.childNodes;
+}
+
+function queryContainer<T extends HTMLElement = HTMLElement>(containerEl: ContainerElement, selector: string) {
+	let queryEl: HTMLElement | DocumentFragment;
+	if (containerEl instanceof HTMLTemplateElement) {
+		queryEl = containerEl.content;
+	} else {
+		queryEl = containerEl;
+	}
+
+	return queryEl.querySelector<T>(selector);
 }
