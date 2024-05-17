@@ -4,7 +4,7 @@ import { assert } from "./utils.js";
 export type AttrValue = EventListener | number | boolean;
 
 /**
- * Only create single html node
+ * Create single html node from (multiples of) string.
  */
 export function htmlSingleFn<T extends Node>(partialStrings: string): T;
 export function htmlSingleFn<T extends Node>(partialStrings: (string | AttrValue)[]): T;

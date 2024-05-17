@@ -56,7 +56,7 @@ describe("returning many", () => {
 		expect((pEl as HTMLElement).tagName).toEqual("P")
 	})
 
-	describe("with types", () => {
+	describe("type generics", () => {
 		test("returns many elements", () => {
 			const [divEl, pEl] = htmlMultipleFn<[HTMLDivElement, HTMLParagraphElement]>([
 				"<div>Hi there,</div>",
@@ -77,6 +77,38 @@ describe("returning many", () => {
 			expect(divEl.tagName).toEqual("DIV")
 			expect(text.data).toEqual(" there, ")
 			expect(pEl.tagName).toEqual("P")
+		})
+	})
+
+	describe("type inference", () => {
+		test("recognize text from literal", () => {
+			const [text] = htmlMultipleFn(["sample text"])
+			expectTypeOf(text).toEqualTypeOf<Text>()
+		})
+
+		test("recognize element from literal", () => {
+			const [el] = htmlMultipleFn(["<div>Some element</div>"])
+			expectTypeOf(el).toEqualTypeOf<HTMLDivElement>()
+		})
+
+		test("recognize comment from literal", () => {
+			const [comment] = htmlMultipleFn(["<!-- comment here -->"])
+			expectTypeOf(comment).toEqualTypeOf<Comment>()
+		})
+
+		test("unable to recognize text from expression", () => {
+			const [text] = htmlMultipleFn(["sample" + "text"])
+
+			expectTypeOf(text).not.toEqualTypeOf<Text>()
+			expectTypeOf(text).toEqualTypeOf<Node>()
+		})
+
+		test("recognize multiples nodes", () => {
+			const [divEl, text, pEl] = htmlMultipleFn(["<div>Hi</div>", " there, ", "<p>I am here</p>"])
+
+			expectTypeOf(divEl).toEqualTypeOf<HTMLDivElement>()
+			expectTypeOf(text).toEqualTypeOf<Text>()
+			expectTypeOf(pEl).toEqualTypeOf<HTMLParagraphElement>()
 		})
 	})
 })
