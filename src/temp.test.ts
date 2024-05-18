@@ -2,6 +2,7 @@ import { beforeAll, beforeEach, describe, expect, expectTypeOf, test } from "vit
 import type {
 	CommentPrefixedString,
 	ElementPrefixedString,
+	ExtractElementPrefix,
 	HtmlTagName,
 	NotStartWithLeftAngleBracket,
 } from "./utils.js"
@@ -174,13 +175,21 @@ const el4 = getElement("This is a text")
 
 ///
 
-type DeterminedNode<S extends string> = S extends ElementPrefixedString<infer T_TagName>
-	? HTMLElementTagNameMap[T_TagName]
-	: S extends CommentPrefixedString
+//type DeterminedNode<S extends string> = S extends ElementPrefixedString<infer T_TagName>
+//	? HTMLElementTagNameMap[T_TagName]
+//	: S extends CommentPrefixedString
+//		? Comment
+//		: S extends NotStartWithLeftAngleBracket<S>
+//			? Text
+//			: Node
+
+type DeterminedNode<S extends string> = [ExtractElementPrefix<S>] extends [never]
+	? S extends CommentPrefixedString
 		? Comment
 		: S extends NotStartWithLeftAngleBracket<S>
 			? Text
 			: Node
+	: HTMLElementTagNameMap[ExtractElementPrefix<S>]
 
 type dn1 = DeterminedNode<"<div ">
 type dn2 = DeterminedNode<"<input />">
@@ -245,6 +254,60 @@ function hm_fn2<S extends string>(htmlString: S): [DeterminedNode<S>] {
 	node.nodeValue = htmlString
 	return [node as DeterminedNode<S>]
 }
+
+///
+
+type TypeHmFn3 = typeof hm_fn3
+
+//function hm_fn3<S extends string>([htmlStrings]: [S]): [DeterminedNode<S>]
+function hm_fn3<T extends string[]>(htmlStrings: [...T]): { [I in keyof T]: DeterminedNode<T[I]> }
+//function hm_fn3<S1 extends string, T_Strings extends string[]>( htmlStrings: [S1, ...T_Strings[]],): [DeterminedNode<S1>, ...{ [I in keyof T_Strings]: DeterminedNode<T_Strings[I]> }]
+//function hm_fn3<T_Strings extends string[]>( htmlStrings: T_Strings,): T_Strings extends [string]
+//	? [DeterminedNode<T_Strings[number]>]
+//	: { [I in keyof T_Strings]: DeterminedNode<T_Strings[I]> }
+function hm_fn3<T_Strings extends string[]>(htmlStrings: T_Strings) {
+	//function hm_fn3<T_Strings extends string[]>([...htmlStrings]: T_Strings): { [I in keyof T_Strings]: DeterminedNode<T_Strings[I]> }
+	//function hm_fn3<T_Strings extends string[]>([...htmlStrings]: T_Strings): {
+	//	[I in keyof T_Strings]: DeterminedNode<T_Strings[I]>
+	//} {
+	return htmlStrings.map((str) => hm_fn2(str)[0]) as { [I in keyof T_Strings]: DeterminedNode<T_Strings[I]> }
+}
+
+type T = [3, ...[]]
+
+hm_fn2("<div>")
+const v3_1 = hm_fn3(["<div>"])
+const v3_2 = hm_fn3(["<div>", "<a ", "text"])
+
+///
+/// https://stackoverflow.com/questions/68180531/how-to-use-variadic-tuple-types-in-typescript
+
+type Wrapped<T_Array extends unknown[]> = { [Index in keyof T_Array]: { value: T_Array[Index] } }
+
+function wrap<T extends unknown[]>(...items: T) {
+	return items.map((item) => ({ value: item })) as Wrapped<T>
+}
+
+function unwrap<T extends unknown[]>(...items: Wrapped<T>) {
+	return items.map((item) => item.value) as T
+}
+
+function wrapArray<T extends unknown[]>(items: [...T]) {
+	return items.map((item) => ({ value: item })) as Wrapped<T>
+}
+
+function unwrapArray(items) {
+	return items.map((item) => item.value)
+}
+
+//
+
+const items1 = wrap(4, "foo")
+
+const items2 = [{ value: 4 }, { value: "foo" }] as const
+const [num, str] = unwrap(...items2)
+
+const items3 = wrapArray([4, "foo"])
 
 ///
 

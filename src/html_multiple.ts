@@ -25,21 +25,22 @@ type IfNotNeverThen<T, P, N> = [T] extends [never] ? N : P;
 //			? Text
 //			: Node;
 
-//type DeterminedNode<S extends string> = [ExtractElementPrefix<S>] extends [never]
-//	? S extends CommentPrefixedString
-//		? Comment
-//		: S extends NotStartWithLeftAngleBracket<S>
-//			? Text
-//			: Node
-//	: HTMLElementTagNameMap[ExtractElementPrefix<S>];
-type DeterminedNode<S extends string> = IfNotNeverThen<
-	ExtractElementPrefix<S>,
-	HTMLElementTagNameMap[ExtractElementPrefix<S>],
-	S extends CommentPrefixedString ? Comment : S extends NotStartWithLeftAngleBracket<S> ? Text : Node
->;
+type DeterminedNode<S extends string> = [ExtractElementPrefix<S>] extends [never]
+	? S extends CommentPrefixedString
+		? Comment
+		: S extends NotStartWithLeftAngleBracket<S>
+			? Text
+			: Node
+	: HTMLElementTagNameMap[ExtractElementPrefix<S>];
+//type DeterminedNode<S extends string> = IfNotNeverThen<
+//	ExtractElementPrefix<S>,
+//	HTMLElementTagNameMap[ExtractElementPrefix<S>],
+//	S extends CommentPrefixedString ? Comment : S extends NotStartWithLeftAngleBracket<S> ? Text : Node
+//>;
 
 //
 const hMFn_v1 = htmlMultipleFn(["<div "]);
+const [hMFn_v1_1] = htmlMultipleFn(["<div "]);
 const hMFn_v1_5 = htmlMultipleFn(["<a> "]);
 const hMFn_v2 = htmlMultipleFn(["<input />"]);
 const hMFn_v3 = htmlMultipleFn(["<!-- comment -->"]);
@@ -75,23 +76,32 @@ type hmfn_x1_5_4 = ExtractElementPrefix<"<x> ">;
 //// overload: single-any
 //export function htmlMultipleFn<T_Node extends Node>(htmlStrings: [string]): [T_Node];
 
-export function htmlMultipleFn<T_String extends string>(htmlString: [T_String]): [DeterminedNode<T_String>];
+//export function htmlMultipleFn<T_String extends string>(htmlString: [T_String]): [DeterminedNode<T_String>];
 
-// overload: multiple any
-export function htmlMultipleFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes;
+//const x = htmlMultipleFn(["<div>", "<p>"])
+
+//export function htmlMultipleFn<const T extends string[]>(htmlStrings: [...T]): { [I in keyof T]: DeterminedNode<T[I]> };
+
+//// overload: multiple any
+//export function htmlMultipleFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes;
+
 // actual implementation
-export function htmlMultipleFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes {
-	if (htmlStrings.length === 0) return [] as unknown as T_Nodes;
+export function htmlMultipleFn<const T extends string[]>(
+	htmlStrings: [...T],
+): { [I in keyof T]: DeterminedNode<T[I]> } {
+	type ReturnType = { [Index in keyof T]: DeterminedNode<T[Index]> };
+
+	if (htmlStrings.length === 0) return [] as ReturnType;
 
 	if (htmlStrings.length === 1) {
-		const [result] = buildSingleNode<T_Nodes[number]>(htmlStrings[0]);
-		return [result] as T_Nodes;
+		const [result] = buildSingleNode(htmlStrings[0]);
+		return [result] as ReturnType;
 	}
 
 	const results = htmlStrings.map((str) => {
-		const result = buildSingleNode<T_Nodes[number]>(str);
+		const result = buildSingleNode(str);
 		return result[0];
-	}) as T_Nodes;
+	}) as ReturnType;
 	return results;
 
 	//// recursive way?

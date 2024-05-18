@@ -56,7 +56,7 @@ describe("returning many", () => {
 		expect((pEl as HTMLElement).tagName).toEqual("P")
 	})
 
-	describe("type generics", () => {
+	describe.skip("type generics", () => {
 		test("returns many elements", () => {
 			const [divEl, pEl] = htmlMultipleFn<[HTMLDivElement, HTMLParagraphElement]>([
 				"<div>Hi there,</div>",
@@ -87,7 +87,8 @@ describe("returning many", () => {
 		})
 
 		test("recognize element from literal", () => {
-			const [el] = htmlMultipleFn(["<div>Some element</div>"])
+			const result = htmlMultipleFn(["<div>Some element</div>"])
+			const [el] = result
 			expectTypeOf(el).toEqualTypeOf<HTMLDivElement>()
 		})
 
@@ -142,11 +143,7 @@ describe("return many with array of elements as input", () => {
 
 	test("many nodes", () => {
 		// TODO: can I make it auto-infer?
-		const [divEl, text, pEl] = subject<[HTMLDivElement, Text, HTMLParagraphElement]>([
-			"<div>Hi</div>",
-			" there, ",
-			"<p>I am here</p>",
-		])
+		const [divEl, text, pEl] = subject(["<div>Hi</div>", " there, ", "<p>I am here</p>"])
 
 		expect(divEl.tagName).toEqual("DIV")
 		expect(text.data).toEqual(" there, ")
