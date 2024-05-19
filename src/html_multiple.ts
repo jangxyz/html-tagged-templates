@@ -3,61 +3,14 @@
  */
 
 import { buildSingleNode } from "./base.js";
-import type {
-	ExtractElementPrefix,
-	CommentPrefixedString,
-	ElementPrefixedString,
-	HtmlTagName,
-	NotStartWithLeftAngleBracket,
-	TagStartDelimiter,
-	TextPrefixedString,
-} from "./utils.js";
+import type { ExtractElementPrefix, CommentPrefixedString, NotStartWithLeftAngleBracket } from "./utils.js";
+import type { IfNotNeverThen } from "./utils/types_util.js";
 
-type IsNeverType<T> = [T] extends [never] ? true : never;
-type IfNeverThen<T, P, N> = [T] extends [never] ? P : N;
-type IfNotNeverThen<T, P, N> = [T] extends [never] ? N : P;
-
-//type DeterminedNode<S extends string> = S extends ElementPrefixedString<infer T_TagName>
-//	? HTMLElementTagNameMap[T_TagName]
-//	: S extends CommentPrefixedString
-//		? Comment
-//		: S extends NotStartWithLeftAngleBracket<S>
-//			? Text
-//			: Node;
-
-type DeterminedNode<S extends string> = [ExtractElementPrefix<S>] extends [never]
-	? S extends CommentPrefixedString
-		? Comment
-		: S extends NotStartWithLeftAngleBracket<S>
-			? Text
-			: Node
-	: HTMLElementTagNameMap[ExtractElementPrefix<S>];
-//type DeterminedNode<S extends string> = IfNotNeverThen<
-//	ExtractElementPrefix<S>,
-//	HTMLElementTagNameMap[ExtractElementPrefix<S>],
-//	S extends CommentPrefixedString ? Comment : S extends NotStartWithLeftAngleBracket<S> ? Text : Node
-//>;
-
-//
-const hMFn_v1 = htmlMultipleFn(["<div "]);
-const [hMFn_v1_1] = htmlMultipleFn(["<div "]);
-const hMFn_v1_5 = htmlMultipleFn(["<a> "]);
-const hMFn_v2 = htmlMultipleFn(["<input />"]);
-const hMFn_v3 = htmlMultipleFn(["<!-- comment -->"]);
-const hMFn_v4 = htmlMultipleFn(["just text"]);
-const hMFn_v5 = htmlMultipleFn(["<invalid node>"]);
-
-type hmfn_1_5 = DeterminedNode<"<a> ">;
-
-type hmfn_x1 = "<div >" extends ElementPrefixedString<"div"> ? 1 : 2;
-//type hmfn_x1_5 = "<a> " extends ElementPrefixedString<infer T_TagName> ? T_TagName : never;
-type hmfn_x1_5_2 = "<a> " extends `<${infer T_TagName}${TagStartDelimiter}${string}`
-	? T_TagName extends HtmlTagName
-		? T_TagName
-		: never
-	: never;
-type hmfn_x1_5_3 = ExtractElementPrefix<"<a> ">;
-type hmfn_x1_5_4 = ExtractElementPrefix<"<x> ">;
+type DeterminedNode<S extends string> = IfNotNeverThen<
+	ExtractElementPrefix<S>,
+	HTMLElementTagNameMap[ExtractElementPrefix<S>],
+	S extends CommentPrefixedString ? Comment : S extends NotStartWithLeftAngleBracket<S> ? Text : Node
+>;
 
 /**
  * Accept html as array of strings.
@@ -66,43 +19,26 @@ type hmfn_x1_5_4 = ExtractElementPrefix<"<x> ">;
  *
  * const [divEl, pEl] = htmlMultipleFn(["<div>Hi there,</div>", "<p>I am here</p>"])
  */
-
-//// overload: single-element
-//export function htmlMultipleFn<T_Str extends HtmlTagName>( htmlString: [ElementPrefixedString<T_Str>]): [HTMLElementTagNameMap[T_Str]];
-//// overload: single-comment
-//export function htmlMultipleFn(htmlString: [CommentPrefixedString]): [Comment];
-//// overload: single-text
-//export function htmlMultipleFn<T_String extends string>(htmlString: [TextPrefixedString<T_String>]): [Text];
-//// overload: single-any
-//export function htmlMultipleFn<T_Node extends Node>(htmlStrings: [string]): [T_Node];
-
-//export function htmlMultipleFn<T_String extends string>(htmlString: [T_String]): [DeterminedNode<T_String>];
-
-//const x = htmlMultipleFn(["<div>", "<p>"])
-
 //export function htmlMultipleFn<const T extends string[]>(htmlStrings: [...T]): { [I in keyof T]: DeterminedNode<T[I]> };
-
-//// overload: multiple any
-//export function htmlMultipleFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes;
-
-// actual implementation
+export function htmlMultipleFn<const T extends (Node | string)[]>(
+	htmlStrings: { [I in keyof T]: T[I] extends string ? T[I] : string },
+): { [I in keyof T]: T[I] extends string ? DeterminedNode<T[I]> : T[I] };
 export function htmlMultipleFn<const T extends string[]>(
 	htmlStrings: [...T],
 ): { [I in keyof T]: DeterminedNode<T[I]> } {
 	type ReturnType = { [Index in keyof T]: DeterminedNode<T[Index]> };
 
-	if (htmlStrings.length === 0) return [] as ReturnType;
+	//if (htmlStrings.length === 0) return [] as ReturnType;
 
-	if (htmlStrings.length === 1) {
-		const [result] = buildSingleNode(htmlStrings[0]);
-		return [result] as ReturnType;
-	}
+	//if (htmlStrings.length === 1) {
+	//	const [result] = buildSingleNode(htmlStrings[0]);
+	//	return [result] as ReturnType;
+	//}
 
-	const results = htmlStrings.map((str) => {
+	return htmlStrings.map((str) => {
 		const result = buildSingleNode(str);
 		return result[0];
 	}) as ReturnType;
-	return results;
 
 	//// recursive way?
 	//

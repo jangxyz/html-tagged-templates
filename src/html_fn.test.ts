@@ -56,7 +56,14 @@ describe("returning many", () => {
 		expect((pEl as HTMLElement).tagName).toEqual("P")
 	})
 
-	describe.skip("type generics", () => {
+	describe("type generics", () => {
+		test("return element", () => {
+			const [divEl] = htmlMultipleFn<[HTMLDivElement]>(["<div>Hi there,</div>"])
+
+			expect(divEl.tagName).toEqual("DIV")
+			expectTypeOf(divEl)
+		})
+
 		test("returns many elements", () => {
 			const [divEl, pEl] = htmlMultipleFn<[HTMLDivElement, HTMLParagraphElement]>([
 				"<div>Hi there,</div>",
@@ -76,6 +83,15 @@ describe("returning many", () => {
 
 			expect(divEl.tagName).toEqual("DIV")
 			expect(text.data).toEqual(" there, ")
+			expect(pEl.tagName).toEqual("P")
+		})
+
+		test("mix of nodes and strings", () => {
+			const divString = "<div>Hi there,</div>"
+			const pString = "<p>I am here</p>"
+			const [divEl, pEl] = htmlMultipleFn<[HTMLDivElement, typeof pString]>([divString, pString])
+
+			expect(divEl.tagName).toEqual("DIV")
 			expect(pEl.tagName).toEqual("P")
 		})
 	})
