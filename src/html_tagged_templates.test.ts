@@ -49,11 +49,19 @@ describe("attributes", () => {
 
 describe("typing", () => {
 	describe("with generics", () => {
-		test("can pass generic", () => {
+		test("can pass type as generic", () => {
 			const divEl = html<HTMLDivElement>`<div>I am a DIV element</div>`
 			expectTypeOf<HTMLDivElement>(divEl)
 
 			const pEl = html<HTMLParagraphElement>`<p>I am a P element</p>`
+			expectTypeOf<HTMLParagraphElement>(pEl)
+		})
+
+		test("can pass tag name as generic", () => {
+			const divEl = html<"div">`<div>I am a DIV element</div>`
+			expectTypeOf<HTMLDivElement>(divEl)
+
+			const pEl = html<"p">`<p>I am a P element</p>`
 			expectTypeOf<HTMLParagraphElement>(pEl)
 		})
 	})

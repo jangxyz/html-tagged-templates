@@ -40,18 +40,17 @@ export function htmlUnifiedFn<T_Nodes extends Node[], Q extends NestedQuery>(
 ): T_Nodes | [...T_Nodes, QueryResultOf<Q>?] | [T_Nodes, QueryResultOf<Q>] {
 	// input as array
 	if (Array.isArray(htmlString)) {
-		//const resultNodes = htmlFnWithArrayArgs<T>(htmlString);
 		const resultNodes = htmlString.map((str) => {
 			const result = buildSingleNode<T_Nodes[number]>(str);
-			return result[0];
-		}) as T_Nodes;
+			return result[0] as T_Nodes[number];
+		});
 
 		//if (hasAnyQueryOption(options)) {
 		//	const queryResults = containerEl ? buildQueryResult(containerEl, options) : ({} as QueryResultOf<Q>);
 		//	return [resultNodes, queryResults];
 		//}
 
-		return resultNodes;
+		return resultNodes as T_Nodes;
 	}
 
 	//// query option

@@ -1,61 +1,60 @@
-import { DeterminedNode, buildSingleNode, queryContainer } from "./base.js";
+import {
+	buildSingleNode,
+	queryContainer,
+	type ContainerElement,
+	type SpecifiedString,
+	type DeterminedNodeOnString,
+	type RestAttrOrStrings,
+	type AttrValue,
+} from "./base.js";
 import { assert } from "./utils.js";
-
-export type AttrValue = EventListener | number | boolean;
 
 /**
  * Create single html node from (multiples of) string.
  */
-export function htmlSingleFn<T extends Node | string>(
-	htmlString: T extends string ? T : string,
-): T extends string ? DeterminedNode<T> : T;
-//export function htmlSingleFn<T_String extends string>(partialStrings: T_String): DeterminedNode<T_String>;
-//export function htmlSingleFn<T_Node extends Node>(partialStrings: string): T_Node;
 
-export function htmlSingleFn<T extends Node | string>(
-	partialStrings: [T extends string ? T : string, ...(string | AttrValue)[]],
-): T extends string ? DeterminedNode<T> : T;
-//export function htmlSingleFn<S extends string>(partialStrings: [S, ...(string | AttrValue)[]]): DeterminedNode<S>;
-//export function htmlSingleFn<N extends Node>(partialStrings: [string, ...(string | AttrValue)[]]): N;
-//export function htmlSingleFn<T extends Node>(partialStrings: string): T;
-//export function htmlSingleFn<T extends Node>(partialStrings: (string | AttrValue)[]): T;
-//export function htmlSingleFn<T extends Node>(partialStrings: string | [string, ...(string | AttrValue)[]]): T;
+// overload - accept single string
+//export function htmlSingleFn<T extends Node | string>(htmlString: T extends string ? T : string): DeterminedNodeOnString<T>;
+
+// overload - accept array of strings
+//export function htmlSingleFn<T extends Node | string>(partialStrings: [T extends string ? T : string, ...RestAttrOrString]): DeterminedNodeOnString<T>;
 
 // actual implementation
 export function htmlSingleFn<T extends Node | string>(
-	stringInput: string | (string | AttrValue)[],
-): T extends string ? DeterminedNode<T> : T {
-	const partialStrings: (string | AttrValue)[] = Array.isArray(stringInput) ? stringInput : [stringInput];
+	//stringInput: string | (string | AttrValue)[],
+	stringInput: SpecifiedString<T> | [SpecifiedString<T>, ...RestAttrOrStrings],
+): DeterminedNodeOnString<T> {
+	const partialStrings: [SpecifiedString<T>, ...RestAttrOrStrings] = Array.isArray(stringInput)
+		? stringInput
+		: [stringInput];
 
-	// reduce callback attribute
+	// reduce callback attribute,
+	// temporarily marking callback functions with unique markers.
 	const markMap: Map<[string, string], EventListener> = new Map();
-	const [{ htmlSoFar: htmlString }] = reduceCallbackAttribute(partialStrings, markMap);
+	const [htmlString] = reduceCallbackAttribute(partialStrings, markMap);
 
+	// build node from string
 	const [node, containerEl] = buildSingleNode(htmlString);
 
-	// re-bind function marks
-	for (const [[attrName, markName], callback] of markMap.entries()) {
-		const selector = `[${attrName}=${markName}]`;
+	// now re-bind marks to function callbacks
+	bindCallbackMarks(containerEl, markMap);
 
-		// bind to first match
-		const targetNode = queryContainer(containerEl, selector);
-		if (!targetNode) {
-			console.warn("failed finding element with attr:", attrName);
-			continue;
-		}
-
-		targetNode.removeAttribute(attrName);
-		targetNode.addEventListener(attrName.replace(/^on/i, ""), callback);
-	}
-
-	return node as unknown as T;
+	return node as unknown as DeterminedNodeOnString<T>;
 }
 
-function reduceCallbackAttribute(
-	partialStrings: (string | AttrValue)[],
-	markMap: Map<[string, string], EventListener>,
+/**
+ * Reduce partial strings into a single html, with following:
+ *  - verify that attr values appear only on attribute value positions.
+ *  - mark callback functions with temporal string.
+ */
+function reduceCallbackAttribute<T extends string = string>(
+	partialStrings: [T, ...(AttrValue | string)[]],
+	markMap?: Map<[string, string], EventListener>,
 ) {
-	const context: { htmlSoFar: string; insideTag: boolean; startAttr: '"' | "'" | null; lastAttrName: string | null } = {
+	const _markMap = markMap ?? new Map<[string, string], EventListener>();
+
+	type Context = { htmlSoFar: string; insideTag: boolean; startAttr: '"' | "'" | null; lastAttrName: string | null };
+	const context: Context = {
 		insideTag: false,
 		startAttr: null,
 		lastAttrName: null,
@@ -118,9 +117,10 @@ function reduceCallbackAttribute(
 		else if (typeof partial === "function") {
 			assert(insideTag && startAttr && lastAttrName, "functions are allowed only as an attribute");
 
-			// temporarily generate random function mark
+			// temporarily generate random function mark.
+			// this will be replaced by actual functions later.
 			const markName = `f${crypto.randomUUID().replaceAll("-", "")}`;
-			markMap.set([lastAttrName, markName], partial);
+			_markMap.set([lastAttrName, markName], partial);
 
 			htmlSoFar += markName;
 		}
@@ -134,5 +134,21 @@ function reduceCallbackAttribute(
 		return { htmlSoFar, insideTag, startAttr, lastAttrName };
 	}, context);
 
-	return [reduceResult, markMap] as const;
+	return [reduceResult.htmlSoFar as T, _markMap, reduceResult] as const;
+}
+
+function bindCallbackMarks(containerEl: ContainerElement, markMap: Map<[string, string], EventListener>) {
+	for (const [[attrName, markName], callback] of markMap.entries()) {
+		const selector = `[${attrName}=${markName}]`;
+
+		// bind to first match
+		const targetNode = queryContainer(containerEl, selector);
+		if (!targetNode) {
+			console.warn("failed finding element with attr:", attrName);
+			continue;
+		}
+
+		targetNode.removeAttribute(attrName);
+		targetNode.addEventListener(attrName.replace(/^on/i, ""), callback);
+	}
 }

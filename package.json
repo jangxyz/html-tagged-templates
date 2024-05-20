@@ -7,7 +7,7 @@
   ],
   "repository": "https://github.com/jangxyz/html-tagged-templates",
   "author": "Kim, Jang-hwan <janghwan@gmail.com>",
-  "version": "0.1.1-rc.5",
+  "version": "0.1.2",
   "license": "ISC",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,7 +21,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.7.3",
-    "@happy-dom/global-registrator": "^14.11.0",
     "@tsconfig/recommended": "^1.0.6",
     "jsdom": "^24.0.0",
     "publint": "^0.2.7",

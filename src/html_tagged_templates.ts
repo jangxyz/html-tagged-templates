@@ -1,4 +1,6 @@
-import { htmlSingleFn, type AttrValue } from "./html_single.js";
+import { htmlSingleFn } from "./html_single.js";
+import type { AttrValue, DeterminedNode, DeterminedNodeOnString } from "./base.js";
+import type { HtmlTagName } from "./utils.js";
 //import type { ElementPrefixedString } from "./utils";
 
 //interface MyTemplateStringsArray extends ReadonlyArray<string> {
@@ -18,20 +20,18 @@ interface DivTemplateStringsArray extends TemplateStringsArray {
 	0: "<div " | `${"<div "}${string}`;
 }
 
-//// overload - div
-//function taggedTemplates(strings: DivTemplateStringsArray, ...values: AttrValue[]): HTMLDivElement;
-//// overload - default
-//function taggedTemplates(strings: MyTemplateStringsArray, ...values: AttrValue[]): HTMLElement;
-//// actual implementation
-function htmlTaggedTemplates<T extends HTMLElement>(strings: TemplateStringsArray, ...values: AttrValue[]): T {
+function htmlTaggedTemplates<T extends HTMLElement | HtmlTagName>(
+	strings: TemplateStringsArray,
+	...values: AttrValue[]
+): T extends HtmlTagName ? HTMLElementTagNameMap[T] : T {
 	if (strings.length === 0) {
 		throw new Error("empty string");
 	}
 
 	// template string always start with a string, and ends with string.
 	// hence, length of `strings` is always larger than length of `values`.
-	const partialStrings: [string, ...(string | AttrValue)[]] = [strings[0]];
-	for (let i = 1; i < strings.length; i += 1) {
+	const partialStrings: (string | AttrValue)[] = [];
+	for (let i = 0; i < strings.length; i += 1) {
 		const stringPart = strings[i];
 		partialStrings.push(stringPart);
 
@@ -41,8 +41,8 @@ function htmlTaggedTemplates<T extends HTMLElement>(strings: TemplateStringsArra
 		}
 	}
 
-	const result = htmlSingleFn(partialStrings);
-	return result as T;
+	const result = htmlSingleFn(partialStrings as [string, ...(string | AttrValue)[]]);
+	return result as T extends HtmlTagName ? HTMLElementTagNameMap[T] : T;
 }
 
 export { htmlTaggedTemplates as html };

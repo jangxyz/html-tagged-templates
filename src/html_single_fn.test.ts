@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, expectTypeOf, test } from "vitest"
+import { describe, expect, expectTypeOf, test } from "vitest"
 import { htmlSingleFn } from "./index.js"
 
 test("is a function", () => {

@@ -3,8 +3,6 @@
  */
 
 import { buildSingleNode, type DeterminedNode } from "./base.js";
-import type { ExtractElementPrefix, CommentPrefixedString, NotStartWithLeftAngleBracket } from "./utils.js";
-import type { IfNotNeverThen } from "./utils/types_util.js";
 
 /**
  * Accept html as array of strings.

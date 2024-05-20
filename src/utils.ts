@@ -34,14 +34,17 @@ export type ExtractElementPrefix<S extends string> = S extends `<${infer T_TagNa
 		: never
 	: never;
 
-const eps1: ElementPrefixedString<"div"> = "<div>abc</div>";
-const eps2: ElementPrefixedString<"div"> = "<div>ab ";
+//const eps1: ElementPrefixedString<"div"> = "<div>abc</div>";
+//const eps2: ElementPrefixedString<"div"> = "<div>ab ";
 
 //
+
 export type CommentPrefixedString = `<!--${string}`;
 //type TypedHtmlString<T extends string> = T extends HtmlTagName ? HtmlPrefix<"div"> : Text;
 
-export type TextPrefixedString<T> = NotStartWithLeftAngleBracket<T>;
+export type CheckCommentPrefix<T extends string> = T extends `<!--${string}` ? T : never;
+
+export type CheckTextPrefix<T extends string> = NotStartWithLeftAngleBracket<T>;
 
 type CaptureTagName<S extends string> = S extends `<${infer T_TagName}${TagStartDelimiter}${string}`
 	? T_TagName extends HtmlTagName
@@ -49,7 +52,7 @@ type CaptureTagName<S extends string> = S extends `<${infer T_TagName}${TagStart
 		: never
 	: never;
 
-type ctn1 = CaptureTagName<"<div>ab ">;
+//type ctn1 = CaptureTagName<"<div>ab ">;
 
 //
 // helper functions

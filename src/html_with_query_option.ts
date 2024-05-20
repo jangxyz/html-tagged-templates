@@ -1,5 +1,5 @@
 import { buildSingleNode, queryContainer, queryAllContainer } from "./base.js";
-import type { ContainerElement, NestedQuery } from "./base.js";
+import type { ContainerElement, NestedQuery, SpecifiedString } from "./base.js";
 
 type OptionsWithQuery<Q extends NestedQuery> = { query: Q };
 type OptionsWithQueryAll<Q extends NestedQuery> = { queryAll: Q };
@@ -27,15 +27,15 @@ type QueryResultMerged<Q extends NestedQuery> = QueryResultOf<Q> & QueryAllResul
  *     query: { firstItem: 'li:first-of-type' }
  *   })
  */
-export function htmlWithQueryFn<T extends Node, Q extends NestedQuery>(
+export function htmlWithQueryFn<T_Node extends Node, Q extends NestedQuery>(
 	htmlString: string,
 	options?: Partial<QueryOptions<Q>>,
-): [T, QueryResultMerged<Q>] {
-	const [resultNode, containerEl] = buildSingleNode<T>(htmlString);
+): [T_Node, QueryResultMerged<Q>] {
+	const [resultNode, containerEl] = buildSingleNode<T_Node>(htmlString);
 
 	//const queryResults = buildQueryResult<Q>(containerEl, options);
 	const queryResultsMerged = buildQueryResultMerged<Q>(containerEl, options);
-	return [resultNode, queryResultsMerged] as const;
+	return [resultNode as T_Node, queryResultsMerged] as const;
 }
 
 function buildQueryResult<Q extends NestedQuery>(
