@@ -21,11 +21,12 @@ export type DeterminedNode<S extends string> = IfNotNeverThen<
 	S extends CommentPrefixedString ? Comment : S extends NotStartWithLeftAngleBracket<S> ? Text : Node
 >;
 
-export type AttrValue = EventListener | number | boolean;
+export type AttrValue = number | boolean | EventListener | Node;
+
 export type StringOrNode = Node | string;
 export type SpecifiedString<T extends StringOrNode> = T extends string ? T : string;
 export type DeterminedNodeOnString<T extends StringOrNode> = T extends string ? DeterminedNode<T> : T;
-export type RestAttrOrStrings = (string | AttrValue)[];
+export type RestAttrOrStrings = (string | AttrValue | Node)[];
 
 type StringToNode<T extends string> = T extends HtmlTagName
 	? HTMLElementTagNameMap[T]
@@ -85,7 +86,6 @@ export function queryAllContainer<T extends HTMLElement = HTMLElement>(
 
 // actual implementation
 export function buildSingleNode<T extends Node | string>(
-	//htmlString: SpecifiedString<T>,
 	htmlString: string,
 ): [DeterminedNodeOnString<T>, ContainerElement] {
 	const [resultNodes, _containerEl] = buildChildNodes(htmlString);
@@ -95,6 +95,8 @@ export function buildSingleNode<T extends Node | string>(
 		if (isEmptyTextNode(resultNodes[0])) {
 			resultNodes.shift();
 		}
+	}
+	if (resultNodes.length > 1) {
 		if (isEmptyTextNode(resultNodes.at(-1))) {
 			resultNodes.pop();
 		}
@@ -104,8 +106,9 @@ export function buildSingleNode<T extends Node | string>(
 		console.error("has more than one node", resultNodes);
 		throw new Error("has more than one node");
 	}
+	const [node] = resultNodes;
 
-	return [resultNodes[0] as unknown as DeterminedNodeOnString<T>, _containerEl];
+	return [node as DeterminedNodeOnString<T>, _containerEl];
 }
 
 function isEmptyTextNode(node: Node | undefined | null): node is Text {

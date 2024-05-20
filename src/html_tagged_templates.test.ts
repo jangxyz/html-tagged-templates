@@ -12,7 +12,8 @@ test("is a tagged template string", () => {
 
 test("may have nested elements", () => {
 	const el = html`<div>
-    I am an element, and this is a <button>button</button>
+    I am an element, and this is a 
+		${html`<button>button</button>`}
   </div>`
 
 	expect(el.querySelector("button")).toBeInstanceOf(HTMLButtonElement)

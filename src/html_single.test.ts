@@ -58,8 +58,8 @@ describe("htmlSingleFn", () => {
 		})
 	})
 
-	describe("nesting", () => {
-		test("create nested element", () => {
+	describe("children nesting", () => {
+		test("create nested element from string", () => {
 			const divEl = htmlSingleFn("<div>Hi there, <em>mate<em>!</div>")
 			expect(divEl).toBeInstanceOf(HTMLDivElement)
 
@@ -82,6 +82,16 @@ describe("htmlSingleFn", () => {
 		//	expect(pEl).toBeInstanceOf(HTMLParagraphElement)
 		//	expect(emEl?.textContent).toEqual("mate")
 		//})
+
+		test("accepts nodes as child", () => {
+			const emEl = htmlSingleFn("<em>Emp!</em>")
+			const divEl = htmlSingleFn(["<div>Hi there, ", emEl, "</div>"])
+			expect(divEl).toBeInstanceOf(HTMLDivElement)
+
+			const childEl = divEl.querySelector("em")
+			expect(childEl?.textContent).toEqual("Emp!")
+			expect(childEl).toBe(emEl)
+		})
 	})
 
 	describe("attributes", () => {

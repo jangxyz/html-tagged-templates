@@ -6,7 +6,7 @@ import type {
 	RestAttrOrStrings,
 	SpecifiedString,
 } from "./base.js";
-import { bindCallbackMarks, reducePartials } from "./html_single.js";
+import { _htmlSingleFn, bindMarks, reducePartials } from "./html_single.js";
 
 type OptionsWithQuery<Q extends NestedQuery> = { query: Q };
 type OptionsWithQueryAll<Q extends NestedQuery> = { queryAll: Q };
@@ -35,24 +35,10 @@ type QueryResultMerged<Q extends NestedQuery> = QueryResultOf<Q> & QueryAllResul
  *   })
  */
 export function htmlTupleFn<T extends Node | string, Q extends NestedQuery>(
-	//stringInput: string,
 	stringInput: SpecifiedString<T> | [SpecifiedString<T>, ...RestAttrOrStrings],
 	options?: Partial<QueryOptions<Q>>,
 ): [DeterminedNodeOnString<T>, QueryResultMerged<Q>] {
-	const partialStrings: [SpecifiedString<T>, ...RestAttrOrStrings] = Array.isArray(stringInput)
-		? stringInput
-		: [stringInput];
-
-	// reduce partial strings into a single html string, merging into a single html string.
-	// temporarily marking callback functions with unique markers.
-	const markMap: Map<[string, string], EventListener> = new Map();
-	const [htmlString] = reducePartials(partialStrings, markMap);
-
-	// build node from string
-	const [resultNode, containerEl] = buildSingleNode(htmlString);
-
-	// now re-bind marks to function callbacks
-	bindCallbackMarks(containerEl, markMap);
+	const [resultNode, containerEl] = _htmlSingleFn(stringInput);
 
 	// append query
 	//const queryResults = buildQueryResult<Q>(containerEl, options);

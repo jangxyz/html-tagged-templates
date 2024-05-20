@@ -18,12 +18,12 @@ npm install @jangxyz/html-tagged-templates
 
 ## Usage
 
-Nested elements work.
+You can nest elements.
 
 ```javascript
 html`<div>
   I am an element, and this is a 
-  <button>button</button>
+  ${html`<button>button</button>`}
 </div>`
 ```
 
@@ -33,7 +33,9 @@ Pass in attributes, including event callbacks.
 const checkbox = html`<input 
   type="checkbox" 
   checked="${true}" 
-  onchange="${(event) => console.log("change:", event.target.checked)}"
+  onchange="${(event) => {
+    console.log("change:", event.target.checked);
+  }}"
 />`
 ```
 
@@ -41,10 +43,11 @@ Note all attributes should be surrounded with quotes -- both single and double q
 
 ### Types
 
-By default the `html\`\`` tagged template returns an HTMLElement.
-If you want it to return the exact element, like if you want `html\`<input type="checkbox" />\`` to return an object of type `HTMLInputElement`, you can use the raw `htmlSingleFn` function below.
-We would like to suppor this to `html\`\`` too, but currently there is a limit in TypeScript that prevents from doing this.
+By default the <code>html\`\`</code> tagged template returns an HTMLElement.  
+If you want it to return the exact element, like if you want <code>html\`<input type="checkbox" />\`</code> to return an object of type `HTMLInputElement`, you can use the raw `htmlSingleFn` function below.
+We would like to support this to <code>html\`\`</code> too, but currently there is a limit in TypeScript that prevents from doing this.  
 Meanwhile you can pass the type or the name of the tag as a generic:
+
 
 ```typescript
 const checkbox1 = html<HTMLInputElement>`<input type="checkbox" />`    // pass generic type, or
@@ -84,7 +87,7 @@ const button = htmlSingleFn([
 
 ### `htmlTupleFn`
 
-Query option returns a object where you can access the queries results.
+Query option returns a object where you can access the queries results. The result is a tuple, which the first item is the outermost element and the second item is composed of each query options' results.
 
 ```javascript
 const result = htmlTuplefn(`<ul><li>first item</li><li>second item</li><ul>`, {
@@ -98,7 +101,7 @@ console.log(firstItem.textContent) // 'first item'
 console.log(items.length) // 2
 ```
 
-The first item is the outermost element, and each query options' results are applied to the second item.
+In case both `query` and `queryAll` option uses the same name, only the result from `query` remains.
 
 
 ### `htmlMultipleFn`

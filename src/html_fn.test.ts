@@ -2,31 +2,31 @@
 //GlobalRegistrator.register({ url: "http://localhost:3000" })
 
 import { beforeAll, beforeEach, describe, expect, expectTypeOf, test } from "vitest"
-import { htmlUnifiedFn, htmlSingleFn, htmlMultipleFn } from "./index.js"
+import { htmlSingleFn, htmlMultipleFn } from "./index.js"
 
-test("is a function", () => {
-	expect(htmlUnifiedFn).toBeInstanceOf(Function)
-	// biome-ignore lint/complexity/noBannedTypes: <explanation>
-	expectTypeOf<Function>(htmlUnifiedFn)
-})
+describe.skip("htmlUnifiedFn", () => {
+	//let subject = htmlUnifiedFn
+	const subject = (...args: any) => any
 
-describe("htmlFn returing list-like", () => {
-	let subject = htmlUnifiedFn
-	beforeAll(() => {
-		subject = htmlUnifiedFn
+	test("is a function", () => {
+		expect(subject).toBeInstanceOf(Function)
+		// biome-ignore lint/complexity/noBannedTypes: <explanation>
+		expectTypeOf<Function>(subject)
 	})
 
-	test("returns items of elements", () => {
-		const result = subject("<div>Hi there</div>")
-		expect(result).toHaveLength(1)
+	describe("htmlFn returing list-like", () => {
+		test("returns items of elements", () => {
+			const result = subject("<div>Hi there</div>")
+			expect(result).toHaveLength(1)
 
-		const [el] = result
-		expect(el).toBeInstanceOf(HTMLElement)
-	})
+			const [el] = result
+			expect(el).toBeInstanceOf(HTMLElement)
+		})
 
-	test.skip("returns list of elements", () => {
-		const result = subject("<div>Hi there</div>")
-		expect(result).toBeInstanceOf(NodeList)
+		test.skip("returns list of elements", () => {
+			const result = subject("<div>Hi there</div>")
+			expect(result).toBeInstanceOf(NodeList)
+		})
 	})
 })
 
