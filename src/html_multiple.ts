@@ -2,8 +2,7 @@
  * Accept html strings as array of strings.
  */
 
-import { buildSingleNode } from "./base.js";
-import type { CommentPrefixedString, ElementPrefixedString, HtmlTagName } from "./utils.js";
+import { buildSingleNode, type DeterminedNode } from "./base.js";
 
 /**
  * Accept html as array of strings.
@@ -12,32 +11,26 @@ import type { CommentPrefixedString, ElementPrefixedString, HtmlTagName } from "
  *
  * const [divEl, pEl] = htmlMultipleFn(["<div>Hi there,</div>", "<p>I am here</p>"])
  */
-// overload: single-element
-export function htmlMultipleFn<T_Str extends HtmlTagName>(
-	htmlString: [ElementPrefixedString<T_Str>],
-): [HTMLElementTagNameMap[T_Str]];
-// overload: single-comment
-export function htmlMultipleFn(htmlString: [CommentPrefixedString]): [Comment];
-// overload: single-text
-export function htmlMultipleFn(htmlString: [string]): [Text];
-// overload: single-any
-export function htmlMultipleFn<T_Node extends Node>(htmlStrings: [string]): [T_Node];
-// overload: multiple any
-export function htmlMultipleFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes;
-// acutla implementation
-export function htmlMultipleFn<T_Nodes extends Node[]>(htmlStrings: string[]): T_Nodes {
-	if (htmlStrings.length === 0) return [] as unknown as T_Nodes;
+//export function htmlMultipleFn<const T extends string[]>(htmlStrings: [...T]): { [I in keyof T]: DeterminedNode<T[I]> };
+export function htmlMultipleFn<const T extends (Node | string)[]>(
+	htmlStrings: { [I in keyof T]: T[I] extends string ? T[I] : string },
+): { [I in keyof T]: T[I] extends string ? DeterminedNode<T[I]> : T[I] };
+export function htmlMultipleFn<const T extends string[]>(
+	htmlStrings: [...T],
+): { [I in keyof T]: DeterminedNode<T[I]> } {
+	type ReturnType = { [Index in keyof T]: DeterminedNode<T[Index]> };
 
-	if (htmlStrings.length === 1) {
-		const [result] = buildSingleNode<T_Nodes[number]>(htmlStrings[0]);
-		return [result] as T_Nodes;
-	}
+	//if (htmlStrings.length === 0) return [] as ReturnType;
 
-	const results = htmlStrings.map((str) => {
-		const result = buildSingleNode<T_Nodes[number]>(str);
+	//if (htmlStrings.length === 1) {
+	//	const [result] = buildSingleNode(htmlStrings[0]);
+	//	return [result] as ReturnType;
+	//}
+
+	return htmlStrings.map((str) => {
+		const result = buildSingleNode(str);
 		return result[0];
-	}) as T_Nodes;
-	return results;
+	}) as ReturnType;
 
 	//// recursive way?
 	//

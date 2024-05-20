@@ -1,6 +1,6 @@
 import { buildChildNodes, buildSingleNode } from "./base.js";
 import type { htmlMultipleFn } from "./html_multiple.js";
-import type { QueryResultOf } from "./html_with_query_option.js";
+import type { QueryResultOf } from "./html_tuple.js";
 
 type NestedQuery = Record<string, string>;
 
@@ -15,48 +15,47 @@ type ContainerElement = HTMLElement | HTMLTemplateElement;
  * Create HTML elements
  */
 // overload - single htmlString
-export function htmlFn<T extends Node[]>(htmlString: string): T;
+export function htmlUnifiedFn<T extends Node[]>(htmlString: string): T;
 // overload - with query option
-export function htmlFn<T extends Node[], Q extends NestedQuery>(
+export function htmlUnifiedFn<T extends Node[], Q extends NestedQuery>(
 	htmlString: string,
 	options: { query: Q },
 ): [...T, QueryResultOf<Q>];
 // overload - string array
-export function htmlFn(htmlStrings: string[]): ReturnType<typeof htmlMultipleFn>;
+export function htmlUnifiedFn(htmlStrings: string[]): ReturnType<typeof htmlMultipleFn>;
 // overload - string array + query option
-export function htmlFn<Q extends NestedQuery>(
+export function htmlUnifiedFn<Q extends NestedQuery>(
 	htmlStrings: string[],
 	options: { query: Q },
 ): [ReturnType<typeof htmlMultipleFn>, QueryResultOf<Q>];
 // overload - default options
-export function htmlFn<T extends Node[], Q extends NestedQuery>(
+export function htmlUnifiedFn<T extends Node[], Q extends NestedQuery>(
 	htmlString: string,
 	options: Partial<Options<Q>>,
 ): [...T, QueryResultOf<Q>];
 // impl.
-export function htmlFn<T_Nodes extends Node[], Q extends NestedQuery>(
+export function htmlUnifiedFn<T_Nodes extends Node[], Q extends NestedQuery>(
 	htmlString: string | string[],
 	options?: Partial<Options<Q>>,
 ): T_Nodes | [...T_Nodes, QueryResultOf<Q>?] | [T_Nodes, QueryResultOf<Q>] {
 	// input as array
 	if (Array.isArray(htmlString)) {
-		//const resultNodes = htmlFnWithArrayArgs<T>(htmlString);
 		const resultNodes = htmlString.map((str) => {
 			const result = buildSingleNode<T_Nodes[number]>(str);
-			return result[0];
-		}) as T_Nodes;
+			return result[0] as T_Nodes[number];
+		});
 
 		//if (hasAnyQueryOption(options)) {
 		//	const queryResults = containerEl ? buildQueryResult(containerEl, options) : ({} as QueryResultOf<Q>);
 		//	return [resultNodes, queryResults];
 		//}
 
-		return resultNodes;
+		return resultNodes as T_Nodes;
 	}
 
 	//// query option
 	//if (hasQueryOption(options)) {
-	//	return htmlWithQueryFn<T_Nodes, Q>(htmlString, options);
+	//	return htmlTuple<T_Nodes, Q>(htmlString, options);
 	//}
 
 	const [resultNodes] = buildChildNodes<T_Nodes>(htmlString);

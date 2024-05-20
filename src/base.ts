@@ -1,13 +1,39 @@
-import type { CommentPrefixedString, ElementPrefixedString, HtmlTagName } from "./utils.js";
+import type {
+	HtmlTagName,
+	ExtractElementPrefix,
+	CommentPrefixedString,
+	ElementPrefixedString,
+	NotStartWithLeftAngleBracket,
+	CheckTextPrefix,
+	CheckCommentPrefix,
+} from "./utils.js";
+import type { IfNotNeverThen } from "./utils/types_util.js";
 
 export type NestedQuery = Record<string, string>;
 
-export type QueryOptions<Q extends NestedQuery> = {
-	query: Q;
-	queryAll: Q;
-};
-
 export type ContainerElement = HTMLElement | HTMLTemplateElement;
+
+// given a string generic type, determine which Node it would be,
+// among one of: [HTMLElement, Comment, Text, Node]
+export type DeterminedNode<S extends string> = IfNotNeverThen<
+	ExtractElementPrefix<S>,
+	HTMLElementTagNameMap[ExtractElementPrefix<S>],
+	S extends CommentPrefixedString ? Comment : S extends NotStartWithLeftAngleBracket<S> ? Text : Node
+>;
+
+export type AttrValue = EventListener | number | boolean;
+export type StringOrNode = Node | string;
+export type SpecifiedString<T extends StringOrNode> = T extends string ? T : string;
+export type DeterminedNodeOnString<T extends StringOrNode> = T extends string ? DeterminedNode<T> : T;
+export type RestAttrOrStrings = (string | AttrValue)[];
+
+type StringToNode<T extends string> = T extends HtmlTagName
+	? HTMLElementTagNameMap[T]
+	: T extends CheckCommentPrefix<T>
+		? Comment
+		: T extends CheckTextPrefix<T>
+			? Text
+			: Node;
 
 /**
  * Perform `querySelector` on query element, whether it is HTMLElement or HTMLTemplateElement.
@@ -42,27 +68,49 @@ export function queryAllContainer<T extends HTMLElement = HTMLElement>(
 	return queryEl.querySelectorAll<T>(selector);
 }
 
+///
+
 /**
  * Build a single element from an html string. Will reuse the container element if provided.
  */
-// overload: HTMLElement
-export function buildSingleNode<T extends HtmlTagName>(
-	htmlString: ElementPrefixedString<T>,
-): [HTMLElementTagNameMap[T], ContainerElement];
-// overload: Comment
-export function buildSingleNode(htmlString: CommentPrefixedString): [Comment, ContainerElement];
-// overload: other - Text
-export function buildSingleNode(htmlString: string): [Text, ContainerElement];
-// overload: default
-export function buildSingleNode<T extends Node>(htmlString: string): [T, ContainerElement];
+
+//// overload: HTMLElement
+//export function buildSingleNode<T extends HtmlTagName>( htmlString: ElementPrefixedString<T>,): [HTMLElementTagNameMap[T], ContainerElement];
+//// overload: Comment
+//export function buildSingleNode<T extends string>(htmlString: CheckCommentPrefix<T>): [Comment, ContainerElement];
+//// overload: other - Text
+//export function buildSingleNode<T extends string>(htmlString: CheckTextPrefix<T>): [Text, ContainerElement];
+//// overload: default
+//export function buildSingleNode<T extends Node>(htmlString: string): [T, ContainerElement];
+
 // actual implementation
-export function buildSingleNode<T extends Node>(htmlString: string): [T, ContainerElement] {
+export function buildSingleNode<T extends Node | string>(
+	//htmlString: SpecifiedString<T>,
+	htmlString: string,
+): [DeterminedNodeOnString<T>, ContainerElement] {
 	const [resultNodes, _containerEl] = buildChildNodes(htmlString);
+
+	// trim empty text nodes
 	if (resultNodes.length > 1) {
+		if (isEmptyTextNode(resultNodes[0])) {
+			resultNodes.shift();
+		}
+		if (isEmptyTextNode(resultNodes.at(-1))) {
+			resultNodes.pop();
+		}
+	}
+
+	if (resultNodes.length > 1) {
+		console.error("has more than one node", resultNodes);
 		throw new Error("has more than one node");
 	}
 
-	return [resultNodes[0] as unknown as T, _containerEl];
+	return [resultNodes[0] as unknown as DeterminedNodeOnString<T>, _containerEl];
+}
+
+function isEmptyTextNode(node: Node | undefined | null): node is Text {
+	if (!node) return false;
+	return node.nodeType === document.TEXT_NODE && node.nodeValue?.trim() === "";
 }
 
 export function buildChildNodes<T extends Node[]>(

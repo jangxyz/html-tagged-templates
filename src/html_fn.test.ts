@@ -2,18 +2,18 @@
 //GlobalRegistrator.register({ url: "http://localhost:3000" })
 
 import { beforeAll, beforeEach, describe, expect, expectTypeOf, test } from "vitest"
-import { htmlFn, htmlSingleFn, htmlMultipleFn, htmlWithQueryFn } from "./index.js"
+import { htmlUnifiedFn, htmlSingleFn, htmlMultipleFn } from "./index.js"
 
 test("is a function", () => {
-	expect(htmlFn).toBeInstanceOf(Function)
+	expect(htmlUnifiedFn).toBeInstanceOf(Function)
 	// biome-ignore lint/complexity/noBannedTypes: <explanation>
-	expectTypeOf<Function>(htmlFn)
+	expectTypeOf<Function>(htmlUnifiedFn)
 })
 
 describe("htmlFn returing list-like", () => {
-	let subject = htmlFn
+	let subject = htmlUnifiedFn
 	beforeAll(() => {
-		subject = htmlFn
+		subject = htmlUnifiedFn
 	})
 
 	test("returns items of elements", () => {
@@ -38,6 +38,39 @@ describe("edge cases", () => {
 		expect(el).toBeInstanceOf(HTMLTableCellElement)
 		expect((el as HTMLElement).tagName).toEqual("TD")
 	})
+
+	describe("type generics", () => {
+		test("pass node type as generic", () => {
+			const tdEl = htmlSingleFn<HTMLTableCellElement>("<td>Hi there</td>")
+			expectTypeOf(tdEl).toEqualTypeOf<HTMLTableCellElement>()
+
+			const el = htmlSingleFn<HTMLElement>("<td>Hi there</td>")
+			expectTypeOf(el).toEqualTypeOf<HTMLElement>()
+		})
+	})
+
+	describe("type inference", () => {
+		test("recognize element from literal", () => {
+			const el = htmlSingleFn("<div>Some element</div>")
+			expectTypeOf(el).toEqualTypeOf<HTMLDivElement>()
+		})
+
+		test("recognize text from literal", () => {
+			const text = htmlSingleFn("sample text")
+			expectTypeOf(text).toEqualTypeOf<Text>()
+		})
+
+		test("recognize comment from literal", () => {
+			const comment = htmlSingleFn("<!-- comment here -->")
+			expectTypeOf(comment).toEqualTypeOf<Comment>()
+		})
+
+		test("unable to recognize text from expression", () => {
+			const text = htmlSingleFn("sample" + "text")
+			expectTypeOf(text).not.toEqualTypeOf<Text>()
+			expectTypeOf(text).toEqualTypeOf<Node>()
+		})
+	})
 })
 
 describe("returning many", () => {
@@ -56,7 +89,14 @@ describe("returning many", () => {
 		expect((pEl as HTMLElement).tagName).toEqual("P")
 	})
 
-	describe("with types", () => {
+	describe("type generics", () => {
+		test("return element", () => {
+			const [divEl] = htmlMultipleFn<[HTMLDivElement]>(["<div>Hi there,</div>"])
+
+			expect(divEl.tagName).toEqual("DIV")
+			expectTypeOf(divEl)
+		})
+
 		test("returns many elements", () => {
 			const [divEl, pEl] = htmlMultipleFn<[HTMLDivElement, HTMLParagraphElement]>([
 				"<div>Hi there,</div>",
@@ -77,6 +117,48 @@ describe("returning many", () => {
 			expect(divEl.tagName).toEqual("DIV")
 			expect(text.data).toEqual(" there, ")
 			expect(pEl.tagName).toEqual("P")
+		})
+
+		test("mix of nodes and strings", () => {
+			const divString = "<div>Hi there,</div>"
+			const pString = "<p>I am here</p>"
+			const [divEl, pEl] = htmlMultipleFn<[HTMLDivElement, typeof pString]>([divString, pString])
+
+			expect(divEl.tagName).toEqual("DIV")
+			expect(pEl.tagName).toEqual("P")
+		})
+	})
+
+	describe("type inference", () => {
+		test("recognize text from literal", () => {
+			const [text] = htmlMultipleFn(["sample text"])
+			expectTypeOf(text).toEqualTypeOf<Text>()
+		})
+
+		test("recognize element from literal", () => {
+			const result = htmlMultipleFn(["<div>Some element</div>"])
+			const [el] = result
+			expectTypeOf(el).toEqualTypeOf<HTMLDivElement>()
+		})
+
+		test("recognize comment from literal", () => {
+			const [comment] = htmlMultipleFn(["<!-- comment here -->"])
+			expectTypeOf(comment).toEqualTypeOf<Comment>()
+		})
+
+		test("unable to recognize text from expression", () => {
+			const [text] = htmlMultipleFn(["sample" + "text"])
+
+			expectTypeOf(text).not.toEqualTypeOf<Text>()
+			expectTypeOf(text).toEqualTypeOf<Node>()
+		})
+
+		test("recognize multiples nodes", () => {
+			const [divEl, text, pEl] = htmlMultipleFn(["<div>Hi</div>", " there, ", "<p>I am here</p>"])
+
+			expectTypeOf(divEl).toEqualTypeOf<HTMLDivElement>()
+			expectTypeOf(text).toEqualTypeOf<Text>()
+			expectTypeOf(pEl).toEqualTypeOf<HTMLParagraphElement>()
 		})
 	})
 })
@@ -110,11 +192,7 @@ describe("return many with array of elements as input", () => {
 
 	test("many nodes", () => {
 		// TODO: can I make it auto-infer?
-		const [divEl, text, pEl] = subject<[HTMLDivElement, Text, HTMLParagraphElement]>([
-			"<div>Hi</div>",
-			" there, ",
-			"<p>I am here</p>",
-		])
+		const [divEl, text, pEl] = subject(["<div>Hi</div>", " there, ", "<p>I am here</p>"])
 
 		expect(divEl.tagName).toEqual("DIV")
 		expect(text.data).toEqual(" there, ")
@@ -129,26 +207,6 @@ describe("nesting", () => {
 
 		const emEl = (divEl as HTMLElement).querySelector("em")
 		expect(emEl).toBeInstanceOf(HTMLElement)
-	})
-
-	test("assign nested queries as option", () => {
-		const result = htmlWithQueryFn("<div>Hi there, <em>mate<em>!</div>", {
-			query: {
-				emEl: "em",
-				boldEl: "bold",
-			},
-		})
-
-		//const [divEl] = result
-		//const { emEl, boldEl } = lastOf(result)
-		const {
-			element: divEl,
-			query: { emEl, boldEl },
-		} = result
-
-		expect(divEl).toBeInstanceOf(HTMLDivElement)
-		expect(emEl).toBeInstanceOf(HTMLElement)
-		expect(boldEl).toBeNull()
 	})
 
 	//test.skip("nested query works with multiple input args too", () => {
@@ -198,6 +256,19 @@ describe("attributes", () => {
 	test("assign other primitives", () => {
 		const checkbox = htmlSingleFn(['<input type="checkbox" checked="', true, '" />'])
 
-		expect((checkbox as HTMLInputElement).getAttribute("checked")).toEqual("true")
+		expect(checkbox.getAttribute("checked")).toEqual("true")
+	})
+
+	describe("types", () => {
+		test.skip("first argument must be string", () => {
+			const fn = () => htmlSingleFn([true, "<div>abc</div>"])
+			expectTypeOf<never>(fn()).toBeNever()
+			expect(fn).toThrowError()
+		})
+
+		test("pass node type as generic", () => {
+			const checkbox = htmlSingleFn<HTMLElement>(['<input type="checkbox" checked="', true, '" />'])
+			expectTypeOf(checkbox).toEqualTypeOf<HTMLElement>()
+		})
 	})
 })
