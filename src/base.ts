@@ -1,13 +1,21 @@
-import type { CommentPrefixedString, ElementPrefixedString, HtmlTagName } from "./utils.js";
+import type {
+	ExtractElementPrefix,
+	CommentPrefixedString,
+	ElementPrefixedString,
+	HtmlTagName,
+	NotStartWithLeftAngleBracket,
+} from "./utils.js";
+import type { IfNotNeverThen } from "./utils/types_util.js";
 
 export type NestedQuery = Record<string, string>;
 
-export type QueryOptions<Q extends NestedQuery> = {
-	query: Q;
-	queryAll: Q;
-};
-
 export type ContainerElement = HTMLElement | HTMLTemplateElement;
+
+export type DeterminedNode<S extends string> = IfNotNeverThen<
+	ExtractElementPrefix<S>,
+	HTMLElementTagNameMap[ExtractElementPrefix<S>],
+	S extends CommentPrefixedString ? Comment : S extends NotStartWithLeftAngleBracket<S> ? Text : Node
+>;
 
 /**
  * Perform `querySelector` on query element, whether it is HTMLElement or HTMLTemplateElement.
@@ -58,11 +66,28 @@ export function buildSingleNode<T extends Node>(htmlString: string): [T, Contain
 // actual implementation
 export function buildSingleNode<T extends Node>(htmlString: string): [T, ContainerElement] {
 	const [resultNodes, _containerEl] = buildChildNodes(htmlString);
+
+	// trim empty text nodes
 	if (resultNodes.length > 1) {
+		if (isEmptyTextNode(resultNodes[0])) {
+			resultNodes.shift();
+		}
+		if (isEmptyTextNode(resultNodes.at(-1))) {
+			resultNodes.pop();
+		}
+	}
+
+	if (resultNodes.length > 1) {
+		console.error("has more than one node", resultNodes);
 		throw new Error("has more than one node");
 	}
 
 	return [resultNodes[0] as unknown as T, _containerEl];
+}
+
+function isEmptyTextNode(node: Node | undefined | null): node is Text {
+	if (!node) return false;
+	return node.nodeType === document.TEXT_NODE && node.nodeValue?.trim() === "";
 }
 
 export function buildChildNodes<T extends Node[]>(

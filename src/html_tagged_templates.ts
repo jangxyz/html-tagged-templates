@@ -6,6 +6,13 @@ import { htmlSingleFn, type AttrValue } from "./html_single.js";
 //}
 //type MyTemplateStringsArray = string[] & { readonly raw: readonly string[]; ;
 
+// ts does not support this (as of 5.4.5)
+// see:
+// - https://github.com/microsoft/TypeScript/issues/31422
+// - https://github.com/microsoft/TypeScript/pull/49552
+// - https://github.com/microsoft/TypeScript/issues/33304
+// - Design Meeting Notes, 8/18/2021: https://github.com/microsoft/TypeScript/issues/45504
+
 interface DivTemplateStringsArray extends TemplateStringsArray {
 	raw: ["<div " | `${"<div "}${string}`, ...string[]];
 	0: "<div " | `${"<div "}${string}`;
@@ -16,11 +23,15 @@ interface DivTemplateStringsArray extends TemplateStringsArray {
 //// overload - default
 //function taggedTemplates(strings: MyTemplateStringsArray, ...values: AttrValue[]): HTMLElement;
 //// actual implementation
-function htmlTaggedTemplates(strings: TemplateStringsArray, ...values: AttrValue[]): HTMLElement {
+function htmlTaggedTemplates<T extends HTMLElement>(strings: TemplateStringsArray, ...values: AttrValue[]): T {
+	if (strings.length === 0) {
+		throw new Error("empty string");
+	}
+
 	// template string always start with a string, and ends with string.
 	// hence, length of `strings` is always larger than length of `values`.
-	const partialStrings: (string | AttrValue)[] = [];
-	for (let i = 0; i < strings.length; i += 1) {
+	const partialStrings: [string, ...(string | AttrValue)[]] = [strings[0]];
+	for (let i = 1; i < strings.length; i += 1) {
 		const stringPart = strings[i];
 		partialStrings.push(stringPart);
 
@@ -31,7 +42,7 @@ function htmlTaggedTemplates(strings: TemplateStringsArray, ...values: AttrValue
 	}
 
 	const result = htmlSingleFn(partialStrings);
-	return result as HTMLElement;
+	return result as T;
 }
 
 export { htmlTaggedTemplates as html };

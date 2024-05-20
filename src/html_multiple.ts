@@ -2,15 +2,9 @@
  * Accept html strings as array of strings.
  */
 
-import { buildSingleNode } from "./base.js";
+import { buildSingleNode, type DeterminedNode } from "./base.js";
 import type { ExtractElementPrefix, CommentPrefixedString, NotStartWithLeftAngleBracket } from "./utils.js";
 import type { IfNotNeverThen } from "./utils/types_util.js";
-
-type DeterminedNode<S extends string> = IfNotNeverThen<
-	ExtractElementPrefix<S>,
-	HTMLElementTagNameMap[ExtractElementPrefix<S>],
-	S extends CommentPrefixedString ? Comment : S extends NotStartWithLeftAngleBracket<S> ? Text : Node
->;
 
 /**
  * Accept html as array of strings.

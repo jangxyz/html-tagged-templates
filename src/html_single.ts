@@ -1,4 +1,4 @@
-import { buildSingleNode, queryContainer } from "./base.js";
+import { DeterminedNode, buildSingleNode, queryContainer } from "./base.js";
 import { assert } from "./utils.js";
 
 export type AttrValue = EventListener | number | boolean;
@@ -6,9 +6,25 @@ export type AttrValue = EventListener | number | boolean;
 /**
  * Create single html node from (multiples of) string.
  */
-export function htmlSingleFn<T extends Node>(partialStrings: string): T;
-export function htmlSingleFn<T extends Node>(partialStrings: (string | AttrValue)[]): T;
-export function htmlSingleFn<T extends Node>(stringInput: string | (string | AttrValue)[]): T {
+export function htmlSingleFn<T extends Node | string>(
+	htmlString: T extends string ? T : string,
+): T extends string ? DeterminedNode<T> : T;
+//export function htmlSingleFn<T_String extends string>(partialStrings: T_String): DeterminedNode<T_String>;
+//export function htmlSingleFn<T_Node extends Node>(partialStrings: string): T_Node;
+
+export function htmlSingleFn<T extends Node | string>(
+	partialStrings: [T extends string ? T : string, ...(string | AttrValue)[]],
+): T extends string ? DeterminedNode<T> : T;
+//export function htmlSingleFn<S extends string>(partialStrings: [S, ...(string | AttrValue)[]]): DeterminedNode<S>;
+//export function htmlSingleFn<N extends Node>(partialStrings: [string, ...(string | AttrValue)[]]): N;
+//export function htmlSingleFn<T extends Node>(partialStrings: string): T;
+//export function htmlSingleFn<T extends Node>(partialStrings: (string | AttrValue)[]): T;
+//export function htmlSingleFn<T extends Node>(partialStrings: string | [string, ...(string | AttrValue)[]]): T;
+
+// actual implementation
+export function htmlSingleFn<T extends Node | string>(
+	stringInput: string | (string | AttrValue)[],
+): T extends string ? DeterminedNode<T> : T {
 	const partialStrings: (string | AttrValue)[] = Array.isArray(stringInput) ? stringInput : [stringInput];
 
 	// reduce callback attribute

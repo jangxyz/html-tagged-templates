@@ -47,12 +47,29 @@ describe("attributes", () => {
 	})
 })
 
-describe.skip("typing", () => {
-	test("can figure out type of outermost element", () => {
-		const divEl = html`<div>I am a DIV element</div>`
-		expectTypeOf<HTMLDivElement>(divEl)
+describe("typing", () => {
+	describe("with generics", () => {
+		test("can pass generic", () => {
+			const divEl = html<HTMLDivElement>`<div>I am a DIV element</div>`
+			expectTypeOf<HTMLDivElement>(divEl)
 
-		const pEl = html`<p>I am a P element</p>`
-		expectTypeOf<HTMLParagraphElement>(pEl)
+			const pEl = html<HTMLParagraphElement>`<p>I am a P element</p>`
+			expectTypeOf<HTMLParagraphElement>(pEl)
+		})
+	})
+
+	describe("inference", () => {
+		test("can only return HTMLElement by default", () => {
+			const divEl = html`<div>I am just an element</div>`
+			expectTypeOf<HTMLElement>(divEl)
+		})
+
+		test.skip("can figure out type of outermost element", () => {
+			const divEl = html`<div>I am a DIV element</div>`
+			expectTypeOf<HTMLDivElement>(divEl)
+
+			const pEl = html`<p>I am a P element</p>`
+			expectTypeOf<HTMLParagraphElement>(pEl)
+		})
 	})
 })

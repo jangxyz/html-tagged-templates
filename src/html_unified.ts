@@ -15,26 +15,26 @@ type ContainerElement = HTMLElement | HTMLTemplateElement;
  * Create HTML elements
  */
 // overload - single htmlString
-export function htmlFn<T extends Node[]>(htmlString: string): T;
+export function htmlUnifiedFn<T extends Node[]>(htmlString: string): T;
 // overload - with query option
-export function htmlFn<T extends Node[], Q extends NestedQuery>(
+export function htmlUnifiedFn<T extends Node[], Q extends NestedQuery>(
 	htmlString: string,
 	options: { query: Q },
 ): [...T, QueryResultOf<Q>];
 // overload - string array
-export function htmlFn(htmlStrings: string[]): ReturnType<typeof htmlMultipleFn>;
+export function htmlUnifiedFn(htmlStrings: string[]): ReturnType<typeof htmlMultipleFn>;
 // overload - string array + query option
-export function htmlFn<Q extends NestedQuery>(
+export function htmlUnifiedFn<Q extends NestedQuery>(
 	htmlStrings: string[],
 	options: { query: Q },
 ): [ReturnType<typeof htmlMultipleFn>, QueryResultOf<Q>];
 // overload - default options
-export function htmlFn<T extends Node[], Q extends NestedQuery>(
+export function htmlUnifiedFn<T extends Node[], Q extends NestedQuery>(
 	htmlString: string,
 	options: Partial<Options<Q>>,
 ): [...T, QueryResultOf<Q>];
 // impl.
-export function htmlFn<T_Nodes extends Node[], Q extends NestedQuery>(
+export function htmlUnifiedFn<T_Nodes extends Node[], Q extends NestedQuery>(
 	htmlString: string | string[],
 	options?: Partial<Options<Q>>,
 ): T_Nodes | [...T_Nodes, QueryResultOf<Q>?] | [T_Nodes, QueryResultOf<Q>] {

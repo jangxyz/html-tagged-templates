@@ -2,18 +2,18 @@
 //GlobalRegistrator.register({ url: "http://localhost:3000" })
 
 import { beforeAll, beforeEach, describe, expect, expectTypeOf, test } from "vitest"
-import { htmlFn, htmlSingleFn, htmlMultipleFn, htmlWithQueryFn } from "./index.js"
+import { htmlUnifiedFn, htmlSingleFn, htmlMultipleFn } from "./index.js"
 
 test("is a function", () => {
-	expect(htmlFn).toBeInstanceOf(Function)
+	expect(htmlUnifiedFn).toBeInstanceOf(Function)
 	// biome-ignore lint/complexity/noBannedTypes: <explanation>
-	expectTypeOf<Function>(htmlFn)
+	expectTypeOf<Function>(htmlUnifiedFn)
 })
 
 describe("htmlFn returing list-like", () => {
-	let subject = htmlFn
+	let subject = htmlUnifiedFn
 	beforeAll(() => {
-		subject = htmlFn
+		subject = htmlUnifiedFn
 	})
 
 	test("returns items of elements", () => {
@@ -37,6 +37,39 @@ describe("edge cases", () => {
 
 		expect(el).toBeInstanceOf(HTMLTableCellElement)
 		expect((el as HTMLElement).tagName).toEqual("TD")
+	})
+
+	describe("type generics", () => {
+		test("pass node type as generic", () => {
+			const tdEl = htmlSingleFn<HTMLTableCellElement>("<td>Hi there</td>")
+			expectTypeOf(tdEl).toEqualTypeOf<HTMLTableCellElement>()
+
+			const el = htmlSingleFn<HTMLElement>("<td>Hi there</td>")
+			expectTypeOf(el).toEqualTypeOf<HTMLElement>()
+		})
+	})
+
+	describe("type inference", () => {
+		test("recognize element from literal", () => {
+			const el = htmlSingleFn("<div>Some element</div>")
+			expectTypeOf(el).toEqualTypeOf<HTMLDivElement>()
+		})
+
+		test("recognize text from literal", () => {
+			const text = htmlSingleFn("sample text")
+			expectTypeOf(text).toEqualTypeOf<Text>()
+		})
+
+		test("recognize comment from literal", () => {
+			const comment = htmlSingleFn("<!-- comment here -->")
+			expectTypeOf(comment).toEqualTypeOf<Comment>()
+		})
+
+		test("unable to recognize text from expression", () => {
+			const text = htmlSingleFn("sample" + "text")
+			expectTypeOf(text).not.toEqualTypeOf<Text>()
+			expectTypeOf(text).toEqualTypeOf<Node>()
+		})
 	})
 })
 
@@ -176,26 +209,6 @@ describe("nesting", () => {
 		expect(emEl).toBeInstanceOf(HTMLElement)
 	})
 
-	test("assign nested queries as option", () => {
-		const result = htmlWithQueryFn("<div>Hi there, <em>mate<em>!</div>", {
-			query: {
-				emEl: "em",
-				boldEl: "bold",
-			},
-		})
-
-		//const [divEl] = result
-		//const { emEl, boldEl } = lastOf(result)
-		const {
-			element: divEl,
-			query: { emEl, boldEl },
-		} = result
-
-		expect(divEl).toBeInstanceOf(HTMLDivElement)
-		expect(emEl).toBeInstanceOf(HTMLElement)
-		expect(boldEl).toBeNull()
-	})
-
 	//test.skip("nested query works with multiple input args too", () => {
 	//	const result = htmlwithQueryFn(["<h1>Title</h1>", "<p>Hi there, <em>mate</em>!</p>"], {
 	//		query: {
@@ -243,6 +256,19 @@ describe("attributes", () => {
 	test("assign other primitives", () => {
 		const checkbox = htmlSingleFn(['<input type="checkbox" checked="', true, '" />'])
 
-		expect((checkbox as HTMLInputElement).getAttribute("checked")).toEqual("true")
+		expect(checkbox.getAttribute("checked")).toEqual("true")
+	})
+
+	describe("types", () => {
+		test.skip("first argument must be string", () => {
+			const fn = () => htmlSingleFn([true, "<div>abc</div>"])
+			expectTypeOf<never>(fn()).toBeNever()
+			expect(fn).toThrowError()
+		})
+
+		test("pass node type as generic", () => {
+			const checkbox = htmlSingleFn<HTMLElement>(['<input type="checkbox" checked="', true, '" />'])
+			expectTypeOf(checkbox).toEqualTypeOf<HTMLElement>()
+		})
 	})
 })
