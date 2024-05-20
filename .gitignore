@@ -1,2 +1,6 @@
 node_modules
 dist
+
+# use Workspace Config+ vscode extension
+.vscode/*
+!.vscode/*.shared.json
