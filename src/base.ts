@@ -2,7 +2,6 @@ import type {
 	HtmlTagName,
 	ExtractElementPrefix,
 	CommentPrefixedString,
-	ElementPrefixedString,
 	NotStartWithLeftAngleBracket,
 	CheckTextPrefix,
 	CheckCommentPrefix,
@@ -21,12 +20,13 @@ export type DeterminedNode<S extends string> = IfNotNeverThen<
 	S extends CommentPrefixedString ? Comment : S extends NotStartWithLeftAngleBracket<S> ? Text : Node
 >;
 
-export type AttrValue = number | boolean | EventListener | Node;
+export type AttrValue = number | boolean | EventListener;
 
 export type StringOrNode = Node | string;
 export type SpecifiedString<T extends StringOrNode> = T extends string ? T : string;
 export type DeterminedNodeOnString<T extends StringOrNode> = T extends string ? DeterminedNode<T> : T;
-export type RestAttrOrStrings = (string | AttrValue | Node)[];
+
+export type PartialChunk = string | AttrValue | Node | Node[];
 
 type StringToNode<T extends string> = T extends HtmlTagName
 	? HTMLElementTagNameMap[T]

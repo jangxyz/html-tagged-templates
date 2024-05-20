@@ -4,8 +4,7 @@ import {
 	type ContainerElement,
 	type SpecifiedString,
 	type DeterminedNodeOnString,
-	type RestAttrOrStrings,
-	type AttrValue,
+	type PartialChunk,
 } from "./base.js";
 import { assert } from "./utils.js";
 
@@ -21,24 +20,22 @@ import { assert } from "./utils.js";
 
 // actual implementation
 export function htmlSingleFn<T extends Node | string>(
-	//stringInput: string | (string | AttrValue)[],
-	stringInput: SpecifiedString<T> | [SpecifiedString<T>, ...RestAttrOrStrings],
+	//partialInput: string | (string | AttrValue)[],
+	partialInput: SpecifiedString<T> | [SpecifiedString<T>, ...PartialChunk[]],
 ): DeterminedNodeOnString<T> {
-	return _htmlSingleFn(stringInput)[0];
+	return _htmlSingleFn(partialInput)[0];
 }
 
 export function _htmlSingleFn<T extends Node | string>(
-	stringInput: SpecifiedString<T> | [SpecifiedString<T>, ...RestAttrOrStrings],
+	partialInput: SpecifiedString<T> | [SpecifiedString<T>, ...PartialChunk[]],
 ) {
-	const partialStrings: [SpecifiedString<T>, ...RestAttrOrStrings] = Array.isArray(stringInput)
-		? stringInput
-		: [stringInput];
+	const partials: [SpecifiedString<T>, ...PartialChunk[]] = Array.isArray(partialInput) ? partialInput : [partialInput];
 
 	// reduce partial strings into a single html string, merging into a single html string.
 	// temporarily marking callback functions with unique markers.
 	const callbackMarkMap: Map<[string, string], EventListener> = new Map();
 	const childMarkMap: Map<string, Node> = new Map();
-	const [htmlString] = reducePartials(partialStrings, callbackMarkMap, childMarkMap);
+	const [htmlString] = reducePartials(partials, callbackMarkMap, childMarkMap);
 
 	// build node from string
 	const [node, containerEl] = buildSingleNode(htmlString);
@@ -55,7 +52,7 @@ export function _htmlSingleFn<T extends Node | string>(
  *  - mark callback functions with temporal string.
  */
 export function reducePartials<T extends string = string>(
-	partialStrings: [T, ...(AttrValue | Node | string)[]],
+	partials: [T, ...PartialChunk[]],
 	callbackMarkMap?: Map<[string, string], EventListener>,
 	childrenMarkMap?: Map<string, Node>,
 ) {
@@ -70,8 +67,8 @@ export function reducePartials<T extends string = string>(
 		htmlSoFar: "",
 	};
 
-	const reduceResult = partialStrings.reduce((memo, partial) => {
-		let { htmlSoFar, insideTag, startAttr, lastAttrName } = memo;
+	const reducePartial = (currentContext: Context, partial: PartialChunk): Context => {
+		let { htmlSoFar, insideTag, startAttr, lastAttrName } = currentContext;
 
 		// part of html chunk
 		if (typeof partial === "string") {
@@ -144,6 +141,15 @@ export function reducePartials<T extends string = string>(
 
 			htmlSoFar += `<span id="${markId}"></span>`;
 		}
+		// iteratively apply with current context.
+		// NOTE other context values beside `htmlSoFar` does not change
+		else if (Array.isArray(partial)) {
+			const { htmlSoFar: finalHtml } = partial.reduce((partialContext, partialItem) => {
+				return reducePartial(partialContext, partialItem);
+			}, currentContext);
+
+			htmlSoFar = finalHtml;
+		}
 		// othe primitives, keep on chunking as string
 		else {
 			assert(insideTag && startAttr && lastAttrName, `${partial} is only allowed as an attribute`);
@@ -152,7 +158,9 @@ export function reducePartials<T extends string = string>(
 		}
 
 		return { htmlSoFar, insideTag, startAttr, lastAttrName };
-	}, context);
+	};
+
+	const reduceResult = partials.reduce(reducePartial, context);
 
 	return [reduceResult.htmlSoFar as T, _callbackMarkMap, _childrenMarkMap, reduceResult] as const;
 }
@@ -187,11 +195,4 @@ export function bindMarks(
 
 		targetNode.parentElement?.replaceChild(node, targetNode);
 	}
-}
-
-export function htmlTupleFn<T extends Node | string>(
-	stringInput: SpecifiedString<T> | [SpecifiedString<T>, ...RestAttrOrStrings],
-): [DeterminedNodeOnString<T>, {}] {
-	const element = htmlSingleFn(stringInput);
-	return [element, {}];
 }

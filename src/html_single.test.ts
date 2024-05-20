@@ -83,7 +83,7 @@ describe("htmlSingleFn", () => {
 		//	expect(emEl?.textContent).toEqual("mate")
 		//})
 
-		test("accepts nodes as child", () => {
+		test("accepts node as child", () => {
 			const emEl = htmlSingleFn("<em>Emp!</em>")
 			const divEl = htmlSingleFn(["<div>Hi there, ", emEl, "</div>"])
 			expect(divEl).toBeInstanceOf(HTMLDivElement)
@@ -91,6 +91,14 @@ describe("htmlSingleFn", () => {
 			const childEl = divEl.querySelector("em")
 			expect(childEl?.textContent).toEqual("Emp!")
 			expect(childEl).toBe(emEl)
+		})
+
+		test("accepts arrays of nodes as child", () => {
+			const items = [1, 2, 3].map((n) => htmlSingleFn(`<li>${n}.</li>`))
+			const ulEl = htmlSingleFn(["<ul>", items, "</ul>"])
+
+			const itemEls = ulEl.querySelectorAll("li")
+			expect(itemEls).toHaveLength(3)
 		})
 	})
 

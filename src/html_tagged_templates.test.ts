@@ -10,13 +10,22 @@ test("is a tagged template string", () => {
 	expect(el.textContent).toEqual("I am an element")
 })
 
-test("may have nested elements", () => {
+test("may have nested element", () => {
 	const el = html`<div>
     I am an element, and this is a 
 		${html`<button>button</button>`}
   </div>`
 
 	expect(el.querySelector("button")).toBeInstanceOf(HTMLButtonElement)
+})
+
+test("may have array of nested elements", () => {
+	const el = html`<div>
+    I am an element, and this is a 
+		${["click", "cancel"].map((text) => html`<button>${text}</button>`)}
+  </div>`
+
+	expect(el.querySelectorAll("button")).toHaveLength(2)
 })
 
 describe("attributes", () => {

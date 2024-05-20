@@ -1,5 +1,5 @@
 import { htmlSingleFn } from "./html_single.js";
-import type { AttrValue, DeterminedNode, DeterminedNodeOnString } from "./base.js";
+import type { PartialChunk } from "./base.js";
 import type { HtmlTagName } from "./utils.js";
 //import type { ElementPrefixedString } from "./utils";
 
@@ -22,7 +22,7 @@ interface DivTemplateStringsArray extends TemplateStringsArray {
 
 function htmlTaggedTemplates<T extends HTMLElement | HtmlTagName>(
 	strings: TemplateStringsArray,
-	...values: AttrValue[]
+	...values: PartialChunk[]
 ): T extends HtmlTagName ? HTMLElementTagNameMap[T] : T {
 	if (strings.length === 0) {
 		throw new Error("empty string");
@@ -30,18 +30,18 @@ function htmlTaggedTemplates<T extends HTMLElement | HtmlTagName>(
 
 	// template string always start with a string, and ends with string.
 	// hence, length of `strings` is always larger than length of `values`.
-	const partialStrings: (string | AttrValue)[] = [];
+	const partialChunks: PartialChunk[] = [];
 	for (let i = 0; i < strings.length; i += 1) {
 		const stringPart = strings[i];
-		partialStrings.push(stringPart);
+		partialChunks.push(stringPart);
 
 		const valuePart = values[i];
 		if (valuePart !== undefined) {
-			partialStrings.push(valuePart);
+			partialChunks.push(valuePart);
 		}
 	}
 
-	const result = htmlSingleFn(partialStrings as [string, ...(string | AttrValue)[]]);
+	const result = htmlSingleFn(partialChunks as [string, ...PartialChunk[]]);
 	return result as T extends HtmlTagName ? HTMLElementTagNameMap[T] : T;
 }
 
