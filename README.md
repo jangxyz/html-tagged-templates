@@ -39,9 +39,23 @@ const checkbox = html`<input
 
 Note all attributes should be surrounded with quotes -- both single and double quotes are allowed.
 
+### Types
+
+By default the `html\`\`` tagged template returns an HTMLElement.
+If you want it to return the exact element, like if you want `html\`<input type="checkbox" />\`` to return an object of type `HTMLInputElement`, you can use the raw `htmlSingleFn` function below.
+We would like to suppor this to `html\`\`` too, but currently there is a limit in TypeScript that prevents from doing this.
+Meanwhile you can pass the type or the name of the tag as a generic:
+
+```typescript
+const checkbox1 = html<HTMLInputElement>`<input type="checkbox" />`    // pass generic type, or
+const checkbox2 = html<'input'>`<input type="checkbox"  />`            // pass the name of the tag
+const checkbox3 = html`<input type="checkbox"  />` as HTMLInputElement // or use type assertion
+```
+
+
 ## Others
 
-In case you feed tagged template literals is too limited, use the functions underneath directly.
+In case you feed tagged template literals is too limited, you can use the functions underneath directly.
 
 ### `htmlSingleFn`
 
@@ -56,8 +70,7 @@ const trEl = htmlSingleFn(`<tr>
 </tr>`)
 ```
 
-To access elements inside nested the outermost element, see [htmlWithQueryFn](#user-content-htmlwithqueryfn).
-
+To access elements inside nested the outermost element, see [htmlTuplefn](#user-content-htmltuplefn).
 
 Multiple string arguments result into a single element. You can pass in attributes values, including event callbacks.
 
@@ -69,29 +82,27 @@ const button = htmlSingleFn([
 ])
 ```
 
-### `htmlMultipleFn`
-
-```javascript
-const [divEl, pEl] = htmlMultipleFn(["<div>Hi there,</div>", "<p>I am here</p>"])
-```
-
-### `htmlWithQueryFn`
+### `htmlTupleFn`
 
 Query option returns a object where you can access the queries results.
 
 ```javascript
-const result = htmlWithQueryFn(`<ul><li>first item</li><li>second item</li><ul>`, {
-  query: { firstItem: 'li:first-of-type' }
-  queryAll: { items: 'li' }
+const result = htmlTuplefn(`<ul><li>first item</li><li>second item</li><ul>`, {
+  query: { firstItem: 'li:first-of-type' } // invokes `.querySelector()`
+  queryAll: { items: 'li' }                // invokes `.queyrSelectorAll()`
 })
 
-const ulEl = result.element
-
-const {
-  query: { firstItem },
-  queryAll: { items },
-} = result
+const [ulEl, { firstItem, items }] = result
 
 console.log(firstItem.textContent) // 'first item'
 console.log(items.length) // 2
+```
+
+The first item is the outermost element, and each query options' results are applied to the second item.
+
+
+### `htmlMultipleFn`
+
+```javascript
+const [divEl, pEl] = htmlMultipleFn(["<div>Hi there,</div>", "<p>I am here</p>"])
 ```

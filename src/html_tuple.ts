@@ -1,5 +1,12 @@
 import { buildSingleNode, queryContainer, queryAllContainer } from "./base.js";
-import type { ContainerElement, NestedQuery, SpecifiedString } from "./base.js";
+import type {
+	ContainerElement,
+	DeterminedNodeOnString,
+	NestedQuery,
+	RestAttrOrStrings,
+	SpecifiedString,
+} from "./base.js";
+import { bindCallbackMarks, reducePartials } from "./html_single.js";
 
 type OptionsWithQuery<Q extends NestedQuery> = { query: Q };
 type OptionsWithQueryAll<Q extends NestedQuery> = { queryAll: Q };
@@ -21,23 +28,39 @@ type QueryResultMerged<Q extends NestedQuery> = QueryResultOf<Q> & QueryAllResul
  *
  * @example
  *
- * const [ulEl, { items, firstItem } = htmlWithQueryFn(
+ * const [ulEl, { items, firstItem } = htmlTupleFn(
  *   `<ul><li>first item</li><li>second item</li><ul>`, {
  *     queryAll: { items: 'li' }
  *     query: { firstItem: 'li:first-of-type' }
  *   })
  */
-export function htmlWithQueryFn<T_Node extends Node, Q extends NestedQuery>(
-	htmlString: string,
+export function htmlTupleFn<T extends Node | string, Q extends NestedQuery>(
+	//stringInput: string,
+	stringInput: SpecifiedString<T> | [SpecifiedString<T>, ...RestAttrOrStrings],
 	options?: Partial<QueryOptions<Q>>,
-): [T_Node, QueryResultMerged<Q>] {
-	const [resultNode, containerEl] = buildSingleNode<T_Node>(htmlString);
+): [DeterminedNodeOnString<T>, QueryResultMerged<Q>] {
+	const partialStrings: [SpecifiedString<T>, ...RestAttrOrStrings] = Array.isArray(stringInput)
+		? stringInput
+		: [stringInput];
 
+	// reduce partial strings into a single html string, merging into a single html string.
+	// temporarily marking callback functions with unique markers.
+	const markMap: Map<[string, string], EventListener> = new Map();
+	const [htmlString] = reducePartials(partialStrings, markMap);
+
+	// build node from string
+	const [resultNode, containerEl] = buildSingleNode(htmlString);
+
+	// now re-bind marks to function callbacks
+	bindCallbackMarks(containerEl, markMap);
+
+	// append query
 	//const queryResults = buildQueryResult<Q>(containerEl, options);
 	const queryResultsMerged = buildQueryResultMerged<Q>(containerEl, options);
-	return [resultNode as T_Node, queryResultsMerged] as const;
+	return [resultNode as DeterminedNodeOnString<T>, queryResultsMerged] as const;
 }
 
+// @deprecated
 function buildQueryResult<Q extends NestedQuery>(
 	containerEl: ContainerElement,
 	queryOptions?: Partial<QueryOptions<Q>>,

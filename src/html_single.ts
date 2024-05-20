@@ -28,10 +28,10 @@ export function htmlSingleFn<T extends Node | string>(
 		? stringInput
 		: [stringInput];
 
-	// reduce callback attribute,
+	// reduce partial strings into a single html string, merging into a single html string.
 	// temporarily marking callback functions with unique markers.
 	const markMap: Map<[string, string], EventListener> = new Map();
-	const [htmlString] = reduceCallbackAttribute(partialStrings, markMap);
+	const [htmlString] = reducePartials(partialStrings, markMap);
 
 	// build node from string
 	const [node, containerEl] = buildSingleNode(htmlString);
@@ -39,7 +39,7 @@ export function htmlSingleFn<T extends Node | string>(
 	// now re-bind marks to function callbacks
 	bindCallbackMarks(containerEl, markMap);
 
-	return node as unknown as DeterminedNodeOnString<T>;
+	return node as DeterminedNodeOnString<T>;
 }
 
 /**
@@ -47,7 +47,7 @@ export function htmlSingleFn<T extends Node | string>(
  *  - verify that attr values appear only on attribute value positions.
  *  - mark callback functions with temporal string.
  */
-function reduceCallbackAttribute<T extends string = string>(
+export function reducePartials<T extends string = string>(
 	partialStrings: [T, ...(AttrValue | string)[]],
 	markMap?: Map<[string, string], EventListener>,
 ) {
@@ -137,7 +137,7 @@ function reduceCallbackAttribute<T extends string = string>(
 	return [reduceResult.htmlSoFar as T, _markMap, reduceResult] as const;
 }
 
-function bindCallbackMarks(containerEl: ContainerElement, markMap: Map<[string, string], EventListener>) {
+export function bindCallbackMarks(containerEl: ContainerElement, markMap: Map<[string, string], EventListener>) {
 	for (const [[attrName, markName], callback] of markMap.entries()) {
 		const selector = `[${attrName}=${markName}]`;
 
@@ -151,4 +151,11 @@ function bindCallbackMarks(containerEl: ContainerElement, markMap: Map<[string, 
 		targetNode.removeAttribute(attrName);
 		targetNode.addEventListener(attrName.replace(/^on/i, ""), callback);
 	}
+}
+
+export function htmlTupleFn<T extends Node | string>(
+	stringInput: SpecifiedString<T> | [SpecifiedString<T>, ...RestAttrOrStrings],
+): [DeterminedNodeOnString<T>, {}] {
+	const element = htmlSingleFn(stringInput);
+	return [element, {}];
 }

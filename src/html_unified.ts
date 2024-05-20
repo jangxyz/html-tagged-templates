@@ -1,6 +1,6 @@
 import { buildChildNodes, buildSingleNode } from "./base.js";
 import type { htmlMultipleFn } from "./html_multiple.js";
-import type { QueryResultOf } from "./html_with_query_option.js";
+import type { QueryResultOf } from "./html_tuple.js";
 
 type NestedQuery = Record<string, string>;
 
@@ -55,7 +55,7 @@ export function htmlUnifiedFn<T_Nodes extends Node[], Q extends NestedQuery>(
 
 	//// query option
 	//if (hasQueryOption(options)) {
-	//	return htmlWithQueryFn<T_Nodes, Q>(htmlString, options);
+	//	return htmlTuple<T_Nodes, Q>(htmlString, options);
 	//}
 
 	const [resultNodes] = buildChildNodes<T_Nodes>(htmlString);
