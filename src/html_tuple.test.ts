@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, test } from "vitest"
-import { htmlTupleFn } from "./html_tuple"
+import { htmlTupleFn } from "./html_tuple.js"
+import { stripIndent } from "common-tags"
 
 describe("htmlTupleFn", () => {
 	test("returns a tuple of HTMLElement from string", () => {
@@ -87,9 +88,11 @@ describe("htmlTupleFn", () => {
 	describe.skip("type generics", () => {
 		test("pass node type as generic", () => {
 			const [tdEl] = htmlTupleFn<HTMLTableCellElement>("<td>Hi there</td>")
+			//     ^?
 			expectTypeOf(tdEl).toEqualTypeOf<HTMLTableCellElement>()
 
 			const [el] = htmlTupleFn<HTMLElement>("<td>Hi there</td>")
+			//     ^?
 			expectTypeOf(el).toEqualTypeOf<HTMLElement>()
 		})
 	})

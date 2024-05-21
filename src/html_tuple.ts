@@ -1,5 +1,11 @@
 import { queryContainer, queryAllContainer } from "./base.js";
-import type { ContainerElement, DeterminedNodeOnString, NestedQuery, PartialChunk, SpecifiedString } from "./base.js";
+import type {
+	ContainerElement,
+	DeterminedNodeOnString,
+	NestedQuery,
+	PartialChunk,
+	SpecifiedString as SpecString,
+} from "./base.js";
 import { _htmlSingleFn } from "./html_single.js";
 
 type OptionsWithQuery<Q extends NestedQuery> = { query: Q };
@@ -17,6 +23,8 @@ export type QueryAllResultOf<Q extends NestedQuery> = {
 type QueryResult<Q extends NestedQuery> = { query: QueryResultOf<Q>; queryAll: QueryAllResultOf<Q> };
 type QueryResultMerged<Q extends NestedQuery> = QueryResultOf<Q> & QueryAllResultOf<Q>;
 
+type SpecStringInputs<T extends Node | string> = [SpecString<T>, ...PartialChunk[]];
+
 /**
  * Accept query options.
  *
@@ -29,7 +37,7 @@ type QueryResultMerged<Q extends NestedQuery> = QueryResultOf<Q> & QueryAllResul
  *   })
  */
 export function htmlTupleFn<T extends Node | string, Q extends NestedQuery>(
-	stringInput: SpecifiedString<T> | [SpecifiedString<T>, ...PartialChunk[]],
+	stringInput: SpecString<T> | SpecStringInputs<T>,
 	options?: Partial<QueryOptions<Q>>,
 ): [DeterminedNodeOnString<T>, QueryResultMerged<Q>] {
 	const [resultNode, containerEl] = _htmlSingleFn(stringInput);

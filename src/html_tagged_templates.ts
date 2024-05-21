@@ -20,10 +20,10 @@ interface DivTemplateStringsArray extends TemplateStringsArray {
 	0: "<div " | `${"<div "}${string}`;
 }
 
-function htmlTaggedTemplates<T extends HTMLElement | HtmlTagName>(
+function htmlTaggedTemplates<T extends HTMLElement | HtmlTagName | undefined = undefined>(
 	strings: TemplateStringsArray,
 	...values: PartialChunk[]
-): T extends HtmlTagName ? HTMLElementTagNameMap[T] : T {
+): T extends undefined ? HTMLElement : T extends HtmlTagName ? HTMLElementTagNameMap[T] : T {
 	if (strings.length === 0) {
 		throw new Error("empty string");
 	}
@@ -42,7 +42,7 @@ function htmlTaggedTemplates<T extends HTMLElement | HtmlTagName>(
 	}
 
 	const result = htmlSingleFn(partialChunks as [string, ...PartialChunk[]]);
-	return result as T extends HtmlTagName ? HTMLElementTagNameMap[T] : T;
+	return result as T extends undefined ? HTMLElement : T extends HtmlTagName ? HTMLElementTagNameMap[T] : T;
 }
 
 export { htmlTaggedTemplates as html };
