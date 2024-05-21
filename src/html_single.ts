@@ -84,8 +84,8 @@ export function reducePartialChunks<T extends string = string>(
 	const reducePartial = (
 		currentContext: Context,
 		partial: PartialChunk,
-		_index: number,
-		_entire: PartialChunk[],
+		_index?: number,
+		_entire?: PartialChunk[],
 	): Context => {
 		let { htmlSoFar, insideTag, startAttr, lastAttrName, endAttr } = currentContext;
 
