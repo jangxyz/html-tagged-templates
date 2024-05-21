@@ -9,6 +9,11 @@ import {
 } from "./base.js";
 import { assert } from "./utils.js";
 
+const REMOVE_ATTR_VALUE_SINGLE = Symbol.for("remove-attr-value-single");
+const REMOVE_ATTR_VALUE_DOUBLE = Symbol.for("remove-attr-value-double");
+const REMOVE_ATTR_SINGLE = Symbol.for("remove-attribute-single");
+const REMOVE_ATTR_DOUBLE = Symbol.for("remove-attribute-double");
+
 /**
  * Create single html node from (multiples of) string.
  */
@@ -34,7 +39,7 @@ export function _htmlSingleFn<T extends Node | string>(partialInput: SpecString<
 	// temporarily marking callback functions with unique markers.
 	const callbackMarkMap: Map<[string, string], EventListener> = new Map();
 	const childMarkMap: Map<string, Node> = new Map();
-	const [htmlString] = reducePartials(partials, callbackMarkMap, childMarkMap);
+	const [htmlString] = reducePartialChunks(partials, callbackMarkMap, childMarkMap);
 
 	// build node from string
 	const [node, containerEl] = buildSingleNode(htmlString);
@@ -50,7 +55,7 @@ export function _htmlSingleFn<T extends Node | string>(partialInput: SpecString<
  *  - verify that attr values appear only on attribute value positions.
  *  - mark callback functions with temporal string.
  */
-export function reducePartials<T extends string = string>(
+export function reducePartialChunks<T extends string = string>(
 	partials: [T, ...PartialChunk[]],
 	callbackMarkMap?: Map<[string, string], EventListener>,
 	childrenMarkMap?: Map<string, Node>,
@@ -58,7 +63,19 @@ export function reducePartials<T extends string = string>(
 	const _callbackMarkMap = callbackMarkMap ?? new Map<[string, string], EventListener>();
 	const _childrenMarkMap = childrenMarkMap ?? new Map<string, Node>();
 
-	type Context = { htmlSoFar: string; insideTag: boolean; startAttr: '"' | "'" | null; lastAttrName: string | null };
+	type Context = {
+		htmlSoFar: string;
+		insideTag: boolean;
+		startAttr:
+			| '"'
+			| "'"
+			| typeof REMOVE_ATTR_VALUE_SINGLE
+			| typeof REMOVE_ATTR_VALUE_DOUBLE
+			| typeof REMOVE_ATTR_SINGLE
+			| typeof REMOVE_ATTR_DOUBLE
+			| null;
+		lastAttrName: string | null;
+	};
 	const context: Context = {
 		insideTag: false,
 		startAttr: null,
@@ -66,7 +83,12 @@ export function reducePartials<T extends string = string>(
 		htmlSoFar: "",
 	};
 
-	const reducePartial = (currentContext: Context, partial: PartialChunk): Context => {
+	const reducePartial = (
+		currentContext: Context,
+		partial: PartialChunk,
+		index: number,
+		entire: PartialChunk[],
+	): Context => {
 		let { htmlSoFar, insideTag, startAttr, lastAttrName } = currentContext;
 
 		// part of html chunk
@@ -79,11 +101,11 @@ export function reducePartials<T extends string = string>(
 				// reducer
 				switch (ch) {
 					case "<":
-						assert(!insideTag, "should be outside tag");
+						assert(!insideTag, `should be outside tag: '${strChunk.slice(i - 5, i + 5)}'`);
 						insideTag = true;
 						break;
 					case ">":
-						assert(insideTag, "should be inside tag");
+						assert(insideTag, `should be inside tag: '${strChunk.slice(i - 5, i + 5)}'`);
 						insideTag = false;
 						break;
 					case "=":
@@ -93,9 +115,8 @@ export function reducePartials<T extends string = string>(
 							if (next === '"' || next === "'") {
 								startAttr = strChunk[i + 1] as typeof next;
 
-								const spaceIndex = strChunk.slice(0, i).lastIndexOf(" ");
-								assert(spaceIndex !== -1, "cannot find attribute name");
-								lastAttrName = strChunk.slice(spaceIndex + 1, i);
+								const spaceIndex = htmlSoFar.lastIndexOf(" ");
+								lastAttrName = htmlSoFar.slice(spaceIndex + 1, -1);
 
 								// skip
 								htmlSoFar += next;
@@ -108,13 +129,23 @@ export function reducePartials<T extends string = string>(
 					case "'":
 						// end attribute
 						if (insideTag && startAttr) {
-							assert(startAttr === ch, `attr should end with ${ch}`);
+							console.log("end attribute:", JSON.stringify(ch), { strChunk, startAttr, htmlSoFar });
+							if (startAttr === REMOVE_ATTR_VALUE_SINGLE) {
+								htmlSoFar = htmlSoFar.replace(/=''$/, "");
+							} else if (startAttr === REMOVE_ATTR_VALUE_DOUBLE) {
+								htmlSoFar = htmlSoFar.replace(/=""$/, "");
+							} else if (startAttr === REMOVE_ATTR_SINGLE) {
+								htmlSoFar = htmlSoFar.replace(new RegExp(`${lastAttrName}=''$`), "");
+							} else if (startAttr === REMOVE_ATTR_DOUBLE) {
+								htmlSoFar = htmlSoFar.replace(new RegExp(`${lastAttrName}=""$`), "");
+							} else {
+								assert(startAttr === ch, `attr should end with ${ch}`);
+							}
+							console.log("=>", { htmlSoFar });
 							startAttr = null;
 							lastAttrName = null;
 						}
 						break;
-
-					default:
 				}
 			}
 		}
@@ -128,6 +159,27 @@ export function reducePartials<T extends string = string>(
 			_callbackMarkMap.set([lastAttrName, markName], partial);
 
 			htmlSoFar += markName;
+		}
+		// boolean attribute
+		else if (typeof partial === "boolean") {
+			assert(insideTag && startAttr && lastAttrName, "boolean values are allowed only as an attribute");
+
+			// TODO: while some attributes like "checked" have boolean values,
+			// some attributes have string "true", "false" values (aria-pressed)
+			// it may be better if we could distinguish all the attributes, and apply them
+
+			// leave only attribute without any value
+			if (partial) {
+				// mark special symbol so the value could be removed later
+				startAttr = startAttr === '"' ? REMOVE_ATTR_VALUE_DOUBLE : REMOVE_ATTR_VALUE_SINGLE;
+			}
+			// remove attribute
+			else {
+				// mark special symbol so the value could be removed later
+				startAttr = startAttr === '"' ? REMOVE_ATTR_DOUBLE : REMOVE_ATTR_SINGLE;
+			}
+
+			console.log("boolean", partial, { htmlSoFar });
 		}
 		// node is onyl available as a child node
 		else if (partial instanceof Node) {
@@ -155,6 +207,8 @@ export function reducePartials<T extends string = string>(
 
 			htmlSoFar += String(partial);
 		}
+
+		console.log("🚀 reducePartial ~ htmlSoFar:", index, JSON.stringify(htmlSoFar));
 
 		return { htmlSoFar, insideTag, startAttr, lastAttrName };
 	};

@@ -127,6 +127,57 @@ describe("htmlSingleFn", () => {
 			expect(button.getAttribute("aria-pressed")).toEqual("false")
 		})
 
+		describe("edge cases", () => {
+			test.todo("raise error if brackets does not match")
+
+			test("okay to have partial string to start with tag name", () => {
+				const el = htmlSingleFn<HTMLDivElement>(["<", "div", ">", "Click me", "</div>"])
+				expect(el.tagName).toEqual("DIV")
+			})
+
+			test("okay to have partial string concatenated into tag name", () => {
+				const el = htmlSingleFn<HTMLDivElement>(["<", "scr", "ipt", ">", "Click me", "</div>"])
+				expect(el.tagName).toEqual("SCRIPT")
+			})
+
+			test("okay to have partial string to start with attr name", () => {
+				let clicked = false
+				const el = htmlSingleFn([
+					"<a ",
+					'onclick="',
+					() => {
+						//console.log('click')
+						clicked = true
+					},
+					'">',
+					"Click me",
+					"</a>",
+				])
+
+				el.click()
+				expect(clicked).toEqual(true)
+			})
+
+			test("okay to have partial string concatenated into attr name", () => {
+				let clicked = false
+				const el = htmlSingleFn([
+					"<a ",
+					"on",
+					'click="',
+					() => {
+						//console.log('click')
+						clicked = true
+					},
+					'">',
+					"Click me",
+					"</a>",
+				])
+
+				el.click()
+				expect(clicked).toEqual(true)
+			})
+		})
+
 		test("assign callbacks", () => {
 			let clicked = false
 
@@ -145,10 +196,25 @@ describe("htmlSingleFn", () => {
 			expect(clicked).toBe(true)
 		})
 
-		test("assign other primitives", () => {
-			const checkbox = htmlSingleFn(['<input type="checkbox" checked="', true, '" />'])
+		test("assign true leaves only attribute name", () => {
+			// true
+			const checkbox1 = htmlSingleFn(['<input type="checkbox" checked="', true, '" />'])
 
-			expect(checkbox.getAttribute("checked")).toEqual("true")
+			expect(checkbox1.hasAttribute("checked")).toBeTruthy()
+			expect(checkbox1.getAttribute("checked")).toBeFalsy()
+		})
+		test("assign false removes attrbute at all", () => {
+			// false
+			const checkbox2 = htmlSingleFn(['<input type="checkbox" checked="', false, '" />'])
+
+			expect(checkbox2.hasAttribute("checked")).toBeFalsy()
+			expect(checkbox2.outerHTML).toEqual('<input type="checkbox">')
+		})
+
+		test.todo("assign other primitives", () => {
+			const numberInput = htmlSingleFn(['<input type="number" min="', 1, '" />'])
+
+			expect(numberInput.getAttribute("min")).toEqual("1")
 		})
 
 		describe("types", () => {

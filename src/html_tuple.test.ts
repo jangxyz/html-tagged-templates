@@ -114,5 +114,28 @@ describe("htmlTupleFn", () => {
 			expectTypeOf(text).not.toEqualTypeOf<Text>()
 			expectTypeOf(text).toEqualTypeOf<Node>()
 		})
+
+		test('recognize query type', () => {
+			const [divEl, { firstItemEl, itemEls }] = htmlTupleFn(
+				`<div>
+					<p>See the list</p>
+					<ul>
+						<li>first item</li>
+						<li>second item</li>
+					</ul>
+				</div>`,
+				{
+					query: { firstItemEl: "li:first-of-type" },
+					queryAll: { itemEls: "li" },
+				},
+			)
+
+			expectTypeOf(divEl).toEqualTypeOf<HTMLDivElement>();
+			//           ^?
+			expectTypeOf(firstItemEl).toEqualTypeOf<HTMLLIElement>();
+			//           ^?
+			expectTypeOf(itemsEl).toEqualTypeOf<NodeListOf<HTMLLIElement>>();
+			//           ^?
+		})
 	})
 })
