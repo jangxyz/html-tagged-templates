@@ -244,4 +244,55 @@ describe("htmlSingleFn", () => {
 			})
 		})
 	})
+
+	describe("options", () => {
+		describe("trim", () => {
+			test("can trim leading and trailing and spaces", () => {
+				const el = htmlSingleFn<HTMLDivElement>(
+					`
+						<div>abc</div>
+					`,
+					{ trim: true },
+				)
+
+				expect(el.tagName).toEqual("DIV")
+			})
+
+			test("can disable trim leading and trailing and spaces", () => {
+				expect(() =>
+					htmlSingleFn<HTMLDivElement>(
+						`
+							<div>abc</div>
+						`,
+						{ trim: false },
+					),
+				).toThrowError()
+			})
+		})
+		describe("stripWhitespace", () => {
+			test("disable strip whitespaces between nodes", () => {
+				const el = htmlSingleFn<HTMLDivElement>(
+					`<div>
+						<span>span 1</span>
+						<span>span 2</span>
+					</div>`,
+					{ stripWhitespace: false },
+				)
+
+				expect(el.childNodes).toHaveLength(5)
+			})
+
+			test("strip whitespaces between nodes", () => {
+				const el = htmlSingleFn<HTMLDivElement>(
+					`<div>
+						<span>span 1</span>
+						<span>span 2</span>
+					</div>`,
+					{ stripWhitespace: true },
+				)
+
+				expect(el.childNodes).toHaveLength(2)
+			})
+		})
+	})
 })
