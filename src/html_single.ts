@@ -45,7 +45,7 @@ export function _htmlSingleFn<T extends Node | string>(
 
 	// reduce partial strings into a single html string, merging into a single html string.
 	// temporarily marking callback functions with unique markers.
-	const [htmlString, callbackMarkMap, childMarkMap] = reducePartialChunks(partials, options);
+	const [htmlString, callbackMarkMap, childMarkMap] = reducePartialChunks(partials);
 
 	// build node from string
 	const [node, containerEl] = buildSingleNode(htmlString, options);
