@@ -127,6 +127,59 @@ describe("htmlSingleFn", () => {
 			expect(button.getAttribute("aria-pressed")).toEqual("false")
 		})
 
+		test("assign callbacks", () => {
+			let clicked = false
+
+			const button = htmlSingleFn([
+				'<button type="button" aria-pressed="false" onclick="',
+				() => {
+					//console.log("click")
+					clicked = true
+				},
+				'">Click me</button>',
+			])
+
+			//console.log("button")
+			;(button as HTMLButtonElement).click()
+
+			expect(clicked).toBe(true)
+		})
+
+		test("assign true leaves only attribute name", () => {
+			// true
+			const checkbox1 = htmlSingleFn(['<input type="checkbox" checked="', true, '" />'])
+
+			expect(checkbox1.hasAttribute("checked")).toBeTruthy()
+			expect(checkbox1.getAttribute("checked")).toBeFalsy()
+		})
+		test("assign false removes attrbute at all", () => {
+			// false
+			const checkbox2 = htmlSingleFn(['<input type="checkbox" checked="', false, '" />'])
+
+			expect(checkbox2.hasAttribute("checked")).toBeFalsy()
+			expect(checkbox2.outerHTML).toEqual('<input type="checkbox">')
+		})
+
+		test("should be inside enclosing quotes", () => {
+			let clicked = false
+			const onClick = () => {
+				clicked = true
+			}
+
+			// attributes without enclosing quotes throws error
+			expect(() => htmlSingleFn(["<button onclick=", onClick, ">Click me</button>"])).toThrowError()
+
+			// both double & single quotes are allowed
+			const attrInSingleQuote = htmlSingleFn(["<button onclick='", onClick, "'>Click me</button>"])
+			expect(attrInSingleQuote.getAttribute("type")).toBe("checkbox")
+		})
+
+		test.todo("assign other primitives", () => {
+			const numberInput = htmlSingleFn(['<input type="number" min="', 1, '" />'])
+
+			expect(numberInput.getAttribute("min")).toEqual("1")
+		})
+
 		describe("edge cases", () => {
 			test.todo("raise error if brackets does not match")
 
@@ -176,45 +229,6 @@ describe("htmlSingleFn", () => {
 				el.click()
 				expect(clicked).toEqual(true)
 			})
-		})
-
-		test("assign callbacks", () => {
-			let clicked = false
-
-			const button = htmlSingleFn([
-				'<button type="button" aria-pressed="false" onclick="',
-				() => {
-					//console.log("click")
-					clicked = true
-				},
-				'">Click me</button>',
-			])
-
-			//console.log("button")
-			;(button as HTMLButtonElement).click()
-
-			expect(clicked).toBe(true)
-		})
-
-		test("assign true leaves only attribute name", () => {
-			// true
-			const checkbox1 = htmlSingleFn(['<input type="checkbox" checked="', true, '" />'])
-
-			expect(checkbox1.hasAttribute("checked")).toBeTruthy()
-			expect(checkbox1.getAttribute("checked")).toBeFalsy()
-		})
-		test("assign false removes attrbute at all", () => {
-			// false
-			const checkbox2 = htmlSingleFn(['<input type="checkbox" checked="', false, '" />'])
-
-			expect(checkbox2.hasAttribute("checked")).toBeFalsy()
-			expect(checkbox2.outerHTML).toEqual('<input type="checkbox">')
-		})
-
-		test.todo("assign other primitives", () => {
-			const numberInput = htmlSingleFn(['<input type="number" min="', 1, '" />'])
-
-			expect(numberInput.getAttribute("min")).toEqual("1")
 		})
 
 		describe("types", () => {

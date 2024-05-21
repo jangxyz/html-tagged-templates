@@ -14,6 +14,9 @@ const REMOVE_ATTR_VALUE_DOUBLE = Symbol.for("remove-attr-value-double");
 const REMOVE_ATTR_SINGLE = Symbol.for("remove-attribute-single");
 const REMOVE_ATTR_DOUBLE = Symbol.for("remove-attribute-double");
 
+const REMOVE_ATTR_VALUE = Symbol.for("remove-attr-value");
+const REMOVE_ATTR = Symbol.for("remove-attribute");
+
 /**
  * Create single html node from (multiples of) string.
  */
@@ -66,30 +69,25 @@ export function reducePartialChunks<T extends string = string>(
 	type Context = {
 		htmlSoFar: string;
 		insideTag: boolean;
-		startAttr:
-			| '"'
-			| "'"
-			| typeof REMOVE_ATTR_VALUE_SINGLE
-			| typeof REMOVE_ATTR_VALUE_DOUBLE
-			| typeof REMOVE_ATTR_SINGLE
-			| typeof REMOVE_ATTR_DOUBLE
-			| null;
+		startAttr: '"' | "'" | null;
 		lastAttrName: string | null;
+		endAttr: null | typeof REMOVE_ATTR_VALUE | typeof REMOVE_ATTR;
 	};
 	const context: Context = {
 		insideTag: false,
 		startAttr: null,
 		lastAttrName: null,
+		endAttr: null,
 		htmlSoFar: "",
 	};
 
 	const reducePartial = (
 		currentContext: Context,
 		partial: PartialChunk,
-		index: number,
-		entire: PartialChunk[],
+		_index: number,
+		_entire: PartialChunk[],
 	): Context => {
-		let { htmlSoFar, insideTag, startAttr, lastAttrName } = currentContext;
+		let { htmlSoFar, insideTag, startAttr, lastAttrName, endAttr } = currentContext;
 
 		// part of html chunk
 		if (typeof partial === "string") {
@@ -114,6 +112,7 @@ export function reducePartialChunks<T extends string = string>(
 							const next = strChunk[i + 1];
 							if (next === '"' || next === "'") {
 								startAttr = strChunk[i + 1] as typeof next;
+								endAttr = null;
 
 								const spaceIndex = htmlSoFar.lastIndexOf(" ");
 								lastAttrName = htmlSoFar.slice(spaceIndex + 1, -1);
@@ -129,19 +128,17 @@ export function reducePartialChunks<T extends string = string>(
 					case "'":
 						// end attribute
 						if (insideTag && startAttr) {
-							console.log("end attribute:", JSON.stringify(ch), { strChunk, startAttr, htmlSoFar });
-							if (startAttr === REMOVE_ATTR_VALUE_SINGLE) {
-								htmlSoFar = htmlSoFar.replace(/=''$/, "");
-							} else if (startAttr === REMOVE_ATTR_VALUE_DOUBLE) {
-								htmlSoFar = htmlSoFar.replace(/=""$/, "");
-							} else if (startAttr === REMOVE_ATTR_SINGLE) {
-								htmlSoFar = htmlSoFar.replace(new RegExp(`${lastAttrName}=''$`), "");
-							} else if (startAttr === REMOVE_ATTR_DOUBLE) {
-								htmlSoFar = htmlSoFar.replace(new RegExp(`${lastAttrName}=""$`), "");
-							} else {
-								assert(startAttr === ch, `attr should end with ${ch}`);
+							assert(startAttr === ch, `attr should end with ${ch}`);
+
+							// value was true, so we only leave attribute name
+							if (endAttr === REMOVE_ATTR_VALUE) {
+								htmlSoFar = htmlSoFar.replace(new RegExp(`=${startAttr.repeat(2)}$`), "");
 							}
-							console.log("=>", { htmlSoFar });
+							// value was false, so we remove attribute completely
+							else if (endAttr === REMOVE_ATTR) {
+								htmlSoFar = htmlSoFar.replace(new RegExp(`${lastAttrName}=${startAttr.repeat(2)}$`), "");
+							}
+
 							startAttr = null;
 							lastAttrName = null;
 						}
@@ -171,15 +168,15 @@ export function reducePartialChunks<T extends string = string>(
 			// leave only attribute without any value
 			if (partial) {
 				// mark special symbol so the value could be removed later
-				startAttr = startAttr === '"' ? REMOVE_ATTR_VALUE_DOUBLE : REMOVE_ATTR_VALUE_SINGLE;
+				//startAttr = startAttr === '"' ? REMOVE_ATTR_VALUE_DOUBLE : REMOVE_ATTR_VALUE_SINGLE;
+				endAttr = REMOVE_ATTR_VALUE;
 			}
 			// remove attribute
 			else {
 				// mark special symbol so the value could be removed later
-				startAttr = startAttr === '"' ? REMOVE_ATTR_DOUBLE : REMOVE_ATTR_SINGLE;
+				//startAttr = startAttr === '"' ? REMOVE_ATTR_DOUBLE : REMOVE_ATTR_SINGLE;
+				endAttr = REMOVE_ATTR;
 			}
-
-			console.log("boolean", partial, { htmlSoFar });
 		}
 		// node is onyl available as a child node
 		else if (partial instanceof Node) {
@@ -208,9 +205,7 @@ export function reducePartialChunks<T extends string = string>(
 			htmlSoFar += String(partial);
 		}
 
-		console.log("🚀 reducePartial ~ htmlSoFar:", index, JSON.stringify(htmlSoFar));
-
-		return { htmlSoFar, insideTag, startAttr, lastAttrName };
+		return { htmlSoFar, insideTag, startAttr, lastAttrName, endAttr };
 	};
 
 	const reduceResult = partials.reduce(reducePartial, context);

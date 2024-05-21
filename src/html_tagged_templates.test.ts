@@ -37,15 +37,28 @@ describe("attributes", () => {
 		}
 	})
 
-	test("may assign values and callbacks as attributes", () => {
-		const checkbox = html`<input type="checkbox" checked="${true}" onclick="${() => {
+	test("may assign callbacks as attributes", () => {
+		const checkbox = html`<input type="checkbox" onclick="${() => {
 			context.clicked = true
 		}}" />` as HTMLInputElement
 
-		expect(checkbox.getAttribute("checked")).toEqual("true")
-
 		checkbox.click()
 		expect(context.clicked).toBe(true)
+	})
+
+	test("assign true leaves only attribute name", () => {
+		// true
+		const checkbox1 = html`<input type="checkbox" checked="${true}" />`
+
+		expect(checkbox1.hasAttribute("checked")).toBeTruthy()
+		expect(checkbox1.getAttribute("checked")).toBeFalsy()
+	})
+	test("assign false removes attrbute at all", () => {
+		// false
+		const checkbox2 = html`<input type="checkbox" checked="${false}" />`
+
+		expect(checkbox2.hasAttribute("checked")).toBeFalsy()
+		expect(checkbox2.outerHTML).toEqual('<input type="checkbox">')
 	})
 
 	test("it must be inside quotes", () => {
@@ -53,7 +66,7 @@ describe("attributes", () => {
 
 		// both double & single quotes are allowed
 		const attrInSingleQuote = html`<input type="checkbox" checked='${true}' />`
-		expect(attrInSingleQuote.getAttribute("checked")).toBe("true")
+		expect(attrInSingleQuote.hasAttribute("checked")).toBeTruthy()
 	})
 })
 
