@@ -6,16 +6,17 @@ import {
 	type DeterminedNodeOnString,
 	type PartialChunk,
 	type SpecStringInputs,
+	DEFAULT_WHITESPACE_OPTION,
 } from "./base.js";
 import { assert } from "./utils.js";
 
-const REMOVE_ATTR_VALUE_SINGLE = Symbol.for("remove-attr-value-single");
-const REMOVE_ATTR_VALUE_DOUBLE = Symbol.for("remove-attr-value-double");
-const REMOVE_ATTR_SINGLE = Symbol.for("remove-attribute-single");
-const REMOVE_ATTR_DOUBLE = Symbol.for("remove-attribute-double");
-
 const REMOVE_ATTR_VALUE = Symbol.for("remove-attr-value");
 const REMOVE_ATTR = Symbol.for("remove-attribute");
+
+type Options = {
+	trim: boolean;
+	stripWhitespace: boolean;
+};
 
 /**
  * Create single html node from (multiples of) string.
@@ -31,21 +32,23 @@ const REMOVE_ATTR = Symbol.for("remove-attribute");
 export function htmlSingleFn<T extends Node | string>(
 	//partialInput: string | (string | AttrValue)[],
 	partialInput: SpecString<T> | SpecStringInputs<T>,
+	options?: Partial<Options>,
 ): DeterminedNodeOnString<T> {
-	return _htmlSingleFn(partialInput)[0];
+	return _htmlSingleFn(partialInput, options)[0];
 }
 
-export function _htmlSingleFn<T extends Node | string>(partialInput: SpecString<T> | SpecStringInputs<T>) {
+export function _htmlSingleFn<T extends Node | string>(
+	partialInput: SpecString<T> | SpecStringInputs<T>,
+	options?: Partial<Options>,
+) {
 	const partials: SpecStringInputs<T> = Array.isArray(partialInput) ? partialInput : [partialInput];
 
 	// reduce partial strings into a single html string, merging into a single html string.
 	// temporarily marking callback functions with unique markers.
-	const callbackMarkMap: Map<[string, string], EventListener> = new Map();
-	const childMarkMap: Map<string, Node> = new Map();
-	const [htmlString] = reducePartialChunks(partials, callbackMarkMap, childMarkMap);
+	const [htmlString, callbackMarkMap, childMarkMap] = reducePartialChunks(partials, options);
 
 	// build node from string
-	const [node, containerEl] = buildSingleNode(htmlString);
+	const [node, containerEl] = buildSingleNode(htmlString, options);
 
 	// now re-bind marks to function callbacks
 	bindMarks(containerEl, callbackMarkMap, childMarkMap);
@@ -58,13 +61,9 @@ export function _htmlSingleFn<T extends Node | string>(partialInput: SpecString<
  *  - verify that attr values appear only on attribute value positions.
  *  - mark callback functions with temporal string.
  */
-export function reducePartialChunks<T extends string = string>(
-	partials: [T, ...PartialChunk[]],
-	callbackMarkMap?: Map<[string, string], EventListener>,
-	childrenMarkMap?: Map<string, Node>,
-) {
-	const _callbackMarkMap = callbackMarkMap ?? new Map<[string, string], EventListener>();
-	const _childrenMarkMap = childrenMarkMap ?? new Map<string, Node>();
+export function reducePartialChunks<T extends string = string>(partials: [T, ...PartialChunk[]]) {
+	const callbackMarkMap = new Map<[string, string], EventListener>();
+	const childrenMarkMap = new Map<string, Node>();
 
 	type Context = {
 		htmlSoFar: string;
@@ -73,7 +72,7 @@ export function reducePartialChunks<T extends string = string>(
 		lastAttrName: string | null;
 		endAttr: null | typeof REMOVE_ATTR_VALUE | typeof REMOVE_ATTR;
 	};
-	const context: Context = {
+	const initialContext: Context = {
 		insideTag: false,
 		startAttr: null,
 		lastAttrName: null,
@@ -101,6 +100,7 @@ export function reducePartialChunks<T extends string = string>(
 					case "<":
 						assert(!insideTag, `should be outside tag: '${strChunk.slice(i - 5, i + 5)}'`);
 						insideTag = true;
+
 						break;
 					case ">":
 						assert(insideTag, `should be inside tag: '${strChunk.slice(i - 5, i + 5)}'`);
@@ -153,7 +153,7 @@ export function reducePartialChunks<T extends string = string>(
 			// temporarily generate random function mark.
 			// this will be replaced by actual functions later.
 			const markName = `f${crypto.randomUUID()}`;
-			_callbackMarkMap.set([lastAttrName, markName], partial);
+			callbackMarkMap.set([lastAttrName, markName], partial);
 
 			htmlSoFar += markName;
 		}
@@ -185,7 +185,7 @@ export function reducePartialChunks<T extends string = string>(
 			// temporarily generate random function mark.
 			// this will be replaced by actual functions later.
 			const markId = `n${crypto.randomUUID()}`;
-			_childrenMarkMap.set(markId, partial);
+			childrenMarkMap.set(markId, partial);
 
 			htmlSoFar += `<span id="${markId}"></span>`;
 		}
@@ -208,9 +208,9 @@ export function reducePartialChunks<T extends string = string>(
 		return { htmlSoFar, insideTag, startAttr, lastAttrName, endAttr };
 	};
 
-	const reduceResult = partials.reduce(reducePartial, context);
+	const resultContext = partials.reduce(reducePartial, initialContext);
 
-	return [reduceResult.htmlSoFar as T, _callbackMarkMap, _childrenMarkMap, reduceResult] as const;
+	return [resultContext.htmlSoFar as T, callbackMarkMap, childrenMarkMap, resultContext] as const;
 }
 
 export function bindMarks(

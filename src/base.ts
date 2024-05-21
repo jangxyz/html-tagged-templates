@@ -36,6 +36,60 @@ export type SpecStringInputs<T extends Node | string> = [SpecString<T>, ...Parti
 //			: Node;
 //
 
+export const DEFAULT_TRIM_OPTION = true;
+export const DEFAULT_WHITESPACE_OPTION = true;
+
+/**
+ * Build a single element from an html string. Will reuse the container element if provided.
+ */
+
+//// overload: HTMLElement
+//export function buildSingleNode<T extends HtmlTagName>( htmlString: ElementPrefixedString<T>,): [HTMLElementTagNameMap[T], ContainerElement];
+//// overload: Comment
+//export function buildSingleNode<T extends string>(htmlString: CheckCommentPrefix<T>): [Comment, ContainerElement];
+//// overload: other - Text
+//export function buildSingleNode<T extends string>(htmlString: CheckTextPrefix<T>): [Text, ContainerElement];
+//// overload: default
+//export function buildSingleNode<T extends Node>(htmlString: string): [T, ContainerElement];
+
+// actual implementation
+export function buildSingleNode<T extends Node | string>(
+	htmlString: string,
+	options?: Partial<{ trim: boolean; stripWhitespace: boolean }>,
+): [DeterminedNodeOnString<T>, ContainerElement] {
+	const { trim, stripWhitespace } = { trim: DEFAULT_TRIM_OPTION, ...options };
+
+	// strip whitespace in-between nodes
+	let _htmlString = htmlString;
+	if (stripWhitespace) {
+		_htmlString = htmlString.replace(/>\s+</g, "><");
+	}
+
+	const [resultNodes, _containerEl] = buildChildNodes(_htmlString);
+
+	// trim empty text nodes
+	if (trim) {
+		if (resultNodes.length > 1) {
+			if (isEmptyTextNode(resultNodes[0])) {
+				resultNodes.shift();
+			}
+		}
+		if (resultNodes.length > 1) {
+			if (isEmptyTextNode(resultNodes.at(-1))) {
+				resultNodes.pop();
+			}
+		}
+	}
+
+	if (resultNodes.length > 1) {
+		console.error("has more than one node", resultNodes);
+		throw new Error("has more than one node");
+	}
+	const [node] = resultNodes;
+
+	return [node as DeterminedNodeOnString<T>, _containerEl];
+}
+
 /**
  * Perform `querySelector` on query element, whether it is HTMLElement or HTMLTemplateElement.
  * @see {@link queryAllContainer} function for `querySelectorAll` version.
@@ -70,46 +124,6 @@ export function queryAllContainer<T extends HTMLElement = HTMLElement>(
 }
 
 ///
-
-/**
- * Build a single element from an html string. Will reuse the container element if provided.
- */
-
-//// overload: HTMLElement
-//export function buildSingleNode<T extends HtmlTagName>( htmlString: ElementPrefixedString<T>,): [HTMLElementTagNameMap[T], ContainerElement];
-//// overload: Comment
-//export function buildSingleNode<T extends string>(htmlString: CheckCommentPrefix<T>): [Comment, ContainerElement];
-//// overload: other - Text
-//export function buildSingleNode<T extends string>(htmlString: CheckTextPrefix<T>): [Text, ContainerElement];
-//// overload: default
-//export function buildSingleNode<T extends Node>(htmlString: string): [T, ContainerElement];
-
-// actual implementation
-export function buildSingleNode<T extends Node | string>(
-	htmlString: string,
-): [DeterminedNodeOnString<T>, ContainerElement] {
-	const [resultNodes, _containerEl] = buildChildNodes(htmlString);
-
-	// trim empty text nodes
-	if (resultNodes.length > 1) {
-		if (isEmptyTextNode(resultNodes[0])) {
-			resultNodes.shift();
-		}
-	}
-	if (resultNodes.length > 1) {
-		if (isEmptyTextNode(resultNodes.at(-1))) {
-			resultNodes.pop();
-		}
-	}
-
-	if (resultNodes.length > 1) {
-		console.error("has more than one node", resultNodes);
-		throw new Error("has more than one node");
-	}
-	const [node] = resultNodes;
-
-	return [node as DeterminedNodeOnString<T>, _containerEl];
-}
 
 function isEmptyTextNode(node: Node | undefined | null): node is Text {
 	if (!node) return false;
