@@ -74,6 +74,8 @@ In case you feel tagged template literals is too limited, you can use the functi
 ### `htmlSingleFn`
 
 ```javascript
+import { htmlSingleFn } from '@jangxyz/html-tagged-templates'
+
 const tdEl = htmlSingleFn("<td>Hi there</td>")
 ```
 
@@ -101,6 +103,8 @@ const button = htmlSingleFn([
 `htmlTupleFn` recieves a query option which returns an object with the queried results. The result is a tuple, where the first item is the outermost element and the second item is composed of each query options' results.
 
 ```javascript
+import { htmlTuplefn } from '@jangxyz/html-tagged-templates'
+
 const result = htmlTuplefn('<ul><li>first item</li><li>second item</li><ul>', {
   query   : { firstItem: 'li:first-of-type' },  // invokes .querySelector()
   queryAll: { items: 'li' }                     // invokes .queyrSelectorAll()
@@ -123,11 +127,15 @@ const [ulEl, { item }] = htmlTuplefn('<ul><li>first item</li><li>second item</li
 console.log(item instanceof HTMLLIElement)
 ```
 
+Apart from the fact that the result is a tuple, everything else is same with `htmlSingleFn`.
+
 
 ### `htmlMultipleFn`
 
 In case you want to return multiple elements at once.
 
 ```javascript
+import { htmlMultipleFn } from '@jangxyz/html-tagged-templates'
+
 const [divEl, pEl] = htmlMultipleFn(["<div>Hi there,</div>", "<p>I am here</p>"])
 ```
