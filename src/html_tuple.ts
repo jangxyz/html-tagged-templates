@@ -4,7 +4,8 @@ import type {
 	DeterminedNodeOnString,
 	NestedQuery,
 	PartialChunk,
-	SpecifiedString as SpecString,
+	SpecString,
+	SpecStringInputs,
 } from "./base.js";
 import { _htmlSingleFn } from "./html_single.js";
 
@@ -22,8 +23,6 @@ export type QueryAllResultOf<Q extends NestedQuery> = {
 
 type QueryResult<Q extends NestedQuery> = { query: QueryResultOf<Q>; queryAll: QueryAllResultOf<Q> };
 type QueryResultMerged<Q extends NestedQuery> = QueryResultOf<Q> & QueryAllResultOf<Q>;
-
-type SpecStringInputs<T extends Node | string> = [SpecString<T>, ...PartialChunk[]];
 
 /**
  * Accept query options.

@@ -19,22 +19,22 @@ export type DeterminedNode<S extends string> = IfNotNeverThen<
 	HTMLElementTagNameMap[ExtractElementPrefix<S>],
 	S extends CommentPrefixedString ? Comment : S extends NotStartWithLeftAngleBracket<S> ? Text : Node
 >;
+export type DeterminedNodeOnString<T extends Node | string> = T extends string ? DeterminedNode<T> : T;
 
 export type AttrValue = number | boolean | EventListener;
 
-export type StringOrNode = Node | string;
-export type SpecifiedString<T extends StringOrNode> = T extends string ? T : string;
-export type DeterminedNodeOnString<T extends StringOrNode> = T extends string ? DeterminedNode<T> : T;
+export type SpecString<T extends Node | string> = T extends string ? T : string;
+export type PartialChunk = string | AttrValue | Node | PartialChunk[];
+export type SpecStringInputs<T extends Node | string> = [SpecString<T>, ...PartialChunk[]];
 
-export type PartialChunk = string | AttrValue | Node | Node[];
-
-type StringToNode<T extends string> = T extends HtmlTagName
-	? HTMLElementTagNameMap[T]
-	: T extends CheckCommentPrefix<T>
-		? Comment
-		: T extends CheckTextPrefix<T>
-			? Text
-			: Node;
+//type StringToNode<T extends string> = T extends HtmlTagName
+//	? HTMLElementTagNameMap[T]
+//	: T extends CheckCommentPrefix<T>
+//		? Comment
+//		: T extends CheckTextPrefix<T>
+//			? Text
+//			: Node;
+//
 
 /**
  * Perform `querySelector` on query element, whether it is HTMLElement or HTMLTemplateElement.
