@@ -25,36 +25,44 @@ describe("htmlSingleFn", () => {
 		})
 	})
 
-	describe("type generics", () => {
-		test("pass node type as generic", () => {
-			const tdEl = htmlSingleFn<HTMLTableCellElement>("<td>Hi there</td>")
-			expectTypeOf(tdEl).toEqualTypeOf<HTMLTableCellElement>()
+	describe("typing", () => {
+		describe("type generics", () => {
+			test("pass node type as generic", () => {
+				const tdEl = htmlSingleFn<HTMLTableCellElement>("<td>Hi there</td>")
+				//    ^?
+				expectTypeOf(tdEl).toEqualTypeOf<HTMLTableCellElement>()
 
-			const el = htmlSingleFn<HTMLElement>("<td>Hi there</td>")
-			expectTypeOf(el).toEqualTypeOf<HTMLElement>()
-		})
-	})
-
-	describe("type inference", () => {
-		test("recognize element from literal", () => {
-			const el = htmlSingleFn("<div>Some element</div>")
-			expectTypeOf(el).toEqualTypeOf<HTMLDivElement>()
+				const el = htmlSingleFn<HTMLElement>("<td>Hi there</td>")
+				//    ^?
+				expectTypeOf(el).toEqualTypeOf<HTMLElement>()
+			})
 		})
 
-		test("recognize text from literal", () => {
-			const text = htmlSingleFn("sample text")
-			expectTypeOf(text).toEqualTypeOf<Text>()
-		})
+		describe("type inference", () => {
+			test("recognize element from literal", () => {
+				const el = htmlSingleFn("<div>Some element</div>")
+				//    ^?
+				expectTypeOf(el).toEqualTypeOf<HTMLDivElement>()
+			})
 
-		test("recognize comment from literal", () => {
-			const comment = htmlSingleFn("<!-- comment here -->")
-			expectTypeOf(comment).toEqualTypeOf<Comment>()
-		})
+			test("recognize text from literal", () => {
+				const text = htmlSingleFn("sample text")
+				//    ^?
+				expectTypeOf(text).toEqualTypeOf<Text>()
+			})
 
-		test("unable to recognize text from expression", () => {
-			const text = htmlSingleFn("sample" + "text")
-			expectTypeOf(text).not.toEqualTypeOf<Text>()
-			expectTypeOf(text).toEqualTypeOf<Node>()
+			test("recognize comment from literal", () => {
+				const comment = htmlSingleFn("<!-- comment here -->")
+				//    ^?
+				expectTypeOf(comment).toEqualTypeOf<Comment>()
+			})
+
+			test("unable to recognize text from expression", () => {
+				const text = htmlSingleFn("sample" + "text")
+				//    ^?
+				expectTypeOf(text).not.toEqualTypeOf<Text>()
+				expectTypeOf(text).toEqualTypeOf<Node>()
+			})
 		})
 	})
 
@@ -66,22 +74,6 @@ describe("htmlSingleFn", () => {
 			const emEl = (divEl as HTMLElement).querySelector("em")
 			expect(emEl).toBeInstanceOf(HTMLElement)
 		})
-
-		//test.skip("nested query works with multiple input args too", () => {
-		//	const result = htmlwithQueryFn(["<h1>Title</h1>", "<p>Hi there, <em>mate</em>!</p>"], {
-		//		query: {
-		//			emEl: "em",
-		//		},
-		//	})
-		//	console.log("🚀 ~ file: html.test.ts:174 ~ test ~ result:", result)
-		//	const [
-		//		[headingEl, pEl],
-		//		{ query: { emEl } },
-		//	] = result
-		//	expect(headingEl).toBeInstanceOf(HTMLHeadingElement)
-		//	expect(pEl).toBeInstanceOf(HTMLParagraphElement)
-		//	expect(emEl?.textContent).toEqual("mate")
-		//})
 
 		test("accepts node as child", () => {
 			const emEl = htmlSingleFn("<em>Emp!</em>")
@@ -99,6 +91,30 @@ describe("htmlSingleFn", () => {
 
 			const itemEls = ulEl.querySelectorAll("li")
 			expect(itemEls).toHaveLength(3)
+		})
+
+		test("accepts nested arrays of children nodes", () => {
+			const containerEl = htmlSingleFn([
+				"<div>",
+				[
+					"<p>List goes here:</p>",
+					"<ul>",
+					[
+						"<li>123</li>",
+						"<li>456</li>",
+						"<li>789</li>",
+						"<li>123</li>",
+						"<li>456</li>",
+						"<li>789</li>",
+						"<li>123</li>",
+					],
+					"</ul>",
+				],
+				"</div>",
+			])
+
+			expect(containerEl.childElementCount).toEqual(2)
+			expect(containerEl.querySelectorAll("ul li")).toHaveLength(7)
 		})
 	})
 

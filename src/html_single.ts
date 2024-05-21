@@ -2,9 +2,10 @@ import {
 	buildSingleNode,
 	queryContainer,
 	type ContainerElement,
-	type SpecifiedString,
+	type SpecString,
 	type DeterminedNodeOnString,
 	type PartialChunk,
+	type SpecStringInputs,
 } from "./base.js";
 import { assert } from "./utils.js";
 
@@ -21,15 +22,13 @@ import { assert } from "./utils.js";
 // actual implementation
 export function htmlSingleFn<T extends Node | string>(
 	//partialInput: string | (string | AttrValue)[],
-	partialInput: SpecifiedString<T> | [SpecifiedString<T>, ...PartialChunk[]],
+	partialInput: SpecString<T> | SpecStringInputs<T>,
 ): DeterminedNodeOnString<T> {
 	return _htmlSingleFn(partialInput)[0];
 }
 
-export function _htmlSingleFn<T extends Node | string>(
-	partialInput: SpecifiedString<T> | [SpecifiedString<T>, ...PartialChunk[]],
-) {
-	const partials: [SpecifiedString<T>, ...PartialChunk[]] = Array.isArray(partialInput) ? partialInput : [partialInput];
+export function _htmlSingleFn<T extends Node | string>(partialInput: SpecString<T> | SpecStringInputs<T>) {
+	const partials: SpecStringInputs<T> = Array.isArray(partialInput) ? partialInput : [partialInput];
 
 	// reduce partial strings into a single html string, merging into a single html string.
 	// temporarily marking callback functions with unique markers.
