@@ -70,6 +70,17 @@ describe("attributes", () => {
 	})
 })
 
+describe("options", () => {
+	test("by default it strip whitespaces between nodes", () => {
+		const el = html`<div>
+			<span>span 1</span>
+			<span>span 2</span>
+		</div>`
+
+		expect(el.childNodes.length).toEqual(2)
+	})
+})
+
 describe("typing", () => {
 	describe("with generics", () => {
 		test("can pass type as generic", () => {

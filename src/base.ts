@@ -57,7 +57,11 @@ export function buildSingleNode<T extends Node | string>(
 	htmlString: string,
 	options?: Partial<{ trim: boolean; stripWhitespace: boolean }>,
 ): [DeterminedNodeOnString<T>, ContainerElement] {
-	const { trim, stripWhitespace } = { trim: DEFAULT_TRIM_OPTION, ...options };
+	const { trim, stripWhitespace } = {
+		trim: DEFAULT_TRIM_OPTION,
+		stripWhitespace: DEFAULT_WHITESPACE_OPTION,
+		...options,
+	};
 
 	// strip whitespace in-between nodes
 	let _htmlString = htmlString;
