@@ -115,7 +115,7 @@ describe("htmlTupleFn", () => {
 			expectTypeOf(text).toEqualTypeOf<Node>()
 		})
 
-		test('recognize query type', () => {
+		test("recognize query type", () => {
 			const [divEl, { firstItemEl, itemEls }] = htmlTupleFn(
 				`<div>
 					<p>See the list</p>
@@ -130,11 +130,11 @@ describe("htmlTupleFn", () => {
 				},
 			)
 
-			expectTypeOf(divEl).toEqualTypeOf<HTMLDivElement>();
+			expectTypeOf(divEl).toEqualTypeOf<HTMLDivElement>()
 			//           ^?
-			expectTypeOf(firstItemEl).toEqualTypeOf<HTMLLIElement>();
+			expectTypeOf(firstItemEl).toEqualTypeOf<HTMLLIElement>()
 			//           ^?
-			expectTypeOf(itemsEl).toEqualTypeOf<NodeListOf<HTMLLIElement>>();
+			expectTypeOf(itemEls).toEqualTypeOf<NodeListOf<HTMLLIElement>>()
 			//           ^?
 		})
 	})

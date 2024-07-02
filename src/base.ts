@@ -66,7 +66,7 @@ export function buildSingleNode<T extends Node | string>(
 	// strip whitespace in-between nodes
 	let _htmlString = htmlString;
 	if (stripWhitespace) {
-		_htmlString = htmlString.replace(/>\s+</g, "><");
+		_htmlString = htmlString.replace(/>\s+/g, ">").replace(/\s+</g, "<");
 	}
 
 	const [resultNodes, _containerEl] = buildChildNodes(_htmlString);

@@ -28,6 +28,17 @@ test("may have array of nested elements", () => {
 	expect(el.querySelectorAll("button")).toHaveLength(2)
 })
 
+describe("text node", () => {
+	test("should be trimmed", () => {
+		const buttonEl = html`<button>
+			click 
+		</button>`
+
+		expect(buttonEl.childNodes).toHaveLength(1)
+		expect(buttonEl.childNodes[0].nodeValue).toEqual("click")
+	})
+})
+
 describe("attributes", () => {
 	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 	let context: any = {}
