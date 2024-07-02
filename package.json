@@ -7,7 +7,7 @@
   ],
   "repository": "https://github.com/jangxyz/html-tagged-templates",
   "author": "Kim, Jang-hwan <janghwan@gmail.com>",
-  "version": "0.2.5-fix.1",
+  "version": "0.2.6",
   "license": "ISC",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
