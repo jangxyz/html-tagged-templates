@@ -116,6 +116,40 @@ describe("htmlTupleFn", () => {
 		})
 
 		test("recognize query type", () => {
+			const [divEl, { firstItemEl }] = htmlTupleFn(
+				`<div>
+					<p>See the list</p>
+					<ul>
+						<li>first item</li>
+						<li>second item</li>
+					</ul>
+				</div>`,
+				{ query: { firstItemEl: "li:first-of-type" } },
+			)
+
+			expectTypeOf(divEl).toEqualTypeOf<HTMLDivElement>()
+			//           ^?
+			expectTypeOf(firstItemEl).toEqualTypeOf<HTMLLIElement>()
+			//           ^?
+		})
+		test("recognize query all type", () => {
+			const [divEl, { itemEls }] = htmlTupleFn(
+				`<div>
+					<p>See the list</p>
+					<ul>
+						<li>first item</li>
+						<li>second item</li>
+					</ul>
+				</div>`,
+				{
+					queryAll: { itemEls: "li" },
+				},
+			)
+
+			expectTypeOf(itemEls).toEqualTypeOf<NodeListOf<HTMLLIElement>>()
+			//           ^?
+		})
+		test("recognize mixed query types", () => {
 			const [divEl, { firstItemEl, itemEls }] = htmlTupleFn(
 				`<div>
 					<p>See the list</p>
@@ -130,8 +164,6 @@ describe("htmlTupleFn", () => {
 				},
 			)
 
-			expectTypeOf(divEl).toEqualTypeOf<HTMLDivElement>()
-			//           ^?
 			expectTypeOf(firstItemEl).toEqualTypeOf<HTMLLIElement>()
 			//           ^?
 			expectTypeOf(itemEls).toEqualTypeOf<NodeListOf<HTMLLIElement>>()
