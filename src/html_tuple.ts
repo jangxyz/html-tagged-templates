@@ -44,6 +44,13 @@ export function htmlTupleFn<T extends Node | string, Q1 extends NestedQuery, Q2 
 	return [resultNode as DeterminedNodeOnString<T>, queryResultsMerged] as const;
 }
 
+export function htmlQuery<Q1 extends NestedQuery, Q2 extends NestedQuery>(
+	element: HTMLElement,
+	queryOptions: AnyQueryOptions<Q1, Q2>,
+) {
+	return buildQueryResultMerged<Q1, Q2>(element, queryOptions);
+}
+
 // @deprecated
 function buildQueryResult<Q extends NestedQuery>(
 	containerEl: ContainerElement,
@@ -72,14 +79,14 @@ function buildQueryResult<Q extends NestedQuery>(
 }
 
 function buildQueryResultMerged<Q1 extends NestedQuery, Q2 extends NestedQuery>(
-	containerEl: ContainerElement,
+	element: ContainerElement,
 	queryOptions?: AnyQueryOptions<Q1, Q2>,
 ): QueryResultMerged2<Q1, Q2> {
 	// 'query'
 	let query = {} as QueryResultOf<Q1>;
 	if (hasQueryOption(queryOptions)) {
 		query = Object.entries(queryOptions.query).reduce((memo, [name, selector]) => {
-			memo[name as keyof Q1] = queryContainer(containerEl, selector);
+			memo[name as keyof Q1] = queryContainer(element, selector);
 			return memo;
 		}, query);
 	}
@@ -88,7 +95,7 @@ function buildQueryResultMerged<Q1 extends NestedQuery, Q2 extends NestedQuery>(
 	let queryAll = {} as QueryAllResultOf<Q2>;
 	if (hasQueryAllOption(queryOptions)) {
 		queryAll = Object.entries(queryOptions.queryAll).reduce((memo, [name, selector]) => {
-			memo[name as keyof Q2] = queryAllContainer(containerEl, selector);
+			memo[name as keyof Q2] = queryAllContainer(element, selector);
 			return memo;
 		}, queryAll);
 	}
