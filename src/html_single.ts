@@ -198,9 +198,9 @@ export function reducePartialChunks<T extends string = string>(partials: [T, ...
 
 			htmlSoFar = finalHtml;
 		}
-		// othe primitives, keep on chunking as string
+		// other primitives, keep on chunking as string
 		else {
-			assert(insideTag && startAttr && lastAttrName, `${partial} is only allowed as an attribute`);
+			assert(!insideTag || (startAttr && lastAttrName), `${partial} is only allowed as an attribute`);
 
 			htmlSoFar += String(partial);
 		}
