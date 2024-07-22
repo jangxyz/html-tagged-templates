@@ -16,7 +16,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "vitest --typecheck",
+    "test:all": "vitest --typecheck",
+    "test": "vitest --typecheck --workspace=vitest.workspace.ts --project node",
     "test:browser": "vitest --workspace=vitest.workspace.ts --project browser",
     "publish:npm": "rm -rf dist && npm run build && npm publish --access public"
   },
