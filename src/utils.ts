@@ -53,9 +53,11 @@ type CaptureTagName<S extends string> = S extends `<${infer T_TagName}${TagStart
 //
 // helper functions
 
-export function assert(condition: unknown, errorMsg: string): asserts condition {
+export function assert(condition: unknown, errorMsg: string, callback?: (error: Error) => void): asserts condition {
 	if (!condition) {
-		throw new Error(errorMsg);
+		const error = new Error(errorMsg);
+		if (callback) callback(error);
+		throw error;
 	}
 }
 

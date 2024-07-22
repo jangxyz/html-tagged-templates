@@ -7,7 +7,7 @@
   ],
   "repository": "https://github.com/jangxyz/html-tagged-templates",
   "author": "Kim, Jang-hwan <janghwan@gmail.com>",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "license": "ISC",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,17 +16,22 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "vitest --typecheck",
+    "test:all": "vitest --typecheck",
+    "test": "vitest --typecheck --workspace=vitest.workspace.ts --project node",
+    "test:browser": "vitest --workspace=vitest.workspace.ts --project browser",
     "publish:npm": "rm -rf dist && npm run build && npm publish --access public"
   },
   "devDependencies": {
     "@biomejs/biome": "1.7.3",
+    "@testing-library/dom": "^10.3.2",
     "@tsconfig/recommended": "^1.0.6",
+    "canvas": "^2.11.2",
     "jsdom": "^24.0.0",
+    "playwright": "^1.45.2",
     "publint": "^0.2.7",
     "typescript": "^5.4.5",
     "vite": "^5.2.11",
-    "vitest": "^1.6.0"
+    "vitest": "^2.0.4"
   },
   "files": [
     "dist"

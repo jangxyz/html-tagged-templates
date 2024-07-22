@@ -9,7 +9,8 @@ describe("htmlSingleFn", () => {
 	})
 
 	test("returns a HTMLElement from string", () => {
-		const el = htmlSingleFn("<div>I am an element")
+		const el = htmlSingleFn("<div>I am an element</div>")
+		console.log("🚀 ~ file: html_single.test.ts:13 ~ test ~ el:", el)
 		expect(el).toBeInstanceOf(HTMLElement)
 	})
 
@@ -107,7 +108,6 @@ describe("htmlSingleFn", () => {
 				},
 				'">Click me</button>',
 			])
-
 			//console.log("button")
 			;(button as HTMLButtonElement).click()
 
