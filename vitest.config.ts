@@ -14,5 +14,10 @@ export default defineConfig({
 
 		//environment: 'happy-dom',
 		environment: "jsdom",
+		environmentOptions: {
+			jsdom: {
+				resources: "usable",
+			},
+		},
 	},
 });
