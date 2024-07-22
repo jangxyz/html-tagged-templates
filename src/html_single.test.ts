@@ -107,7 +107,6 @@ describe("htmlSingleFn", () => {
 				},
 				'">Click me</button>',
 			])
-
 			//console.log("button")
 			;(button as HTMLButtonElement).click()
 

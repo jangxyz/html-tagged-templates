@@ -12,7 +12,7 @@ export default defineWorkspace([
 			include: ["src/**/*browser-test.ts"],
 			browser: {
 				provider: "playwright",
-				enabled: true,
+				enabled: !true,
 				name: "chromium",
 				headless: false,
 				// https://playwright.dev
