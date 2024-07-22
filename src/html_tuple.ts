@@ -1,13 +1,18 @@
 import { queryContainer, queryAllContainer } from "./base.js";
-import type { ContainerElement, DeterminedNodeOnString, NestedQuery, SpecString, SpecStringInputs } from "./base.js";
+import type { ContainerElement, DeterminedNodeOnString, SpecString, SpecStringInputs } from "./base.js";
 import { _htmlSingleFn } from "./html_single.js";
+
+type NestedQuery<V = string> = Record<string, V>;
 
 type OptionsWithQuery<Q extends NestedQuery> = { query: Q };
 type OptionsWithQueryAll<Q extends NestedQuery> = { queryAll: Q };
 type OptionsWithBothQuery<Q1 extends NestedQuery, Q2 extends NestedQuery> = { query: Q1; queryAll: Q2 };
 type QueryOptions<Q extends NestedQuery> = { query: Q; queryAll: Q };
 
-type AnyQueryOptions<Q1 extends NestedQuery, Q2 extends NestedQuery> = Partial<{ query: Q1; queryAll: Q2 }>;
+type AnyQueryOptions<Q1 extends NestedQuery, Q2 extends NestedQuery> = Partial<{
+	query: { [k in keyof Q1]: string };
+	queryAll: { [k in keyof Q2]: string };
+}>;
 
 export type QueryResultOf<Q extends NestedQuery> = {
 	[K in keyof Q]: HTMLElement | null;
@@ -16,7 +21,10 @@ export type QueryAllResultOf<Q extends NestedQuery> = {
 	[K in keyof Q]: NodeList;
 };
 
-type QueryResult<Q extends NestedQuery> = { query: QueryResultOf<Q>; queryAll: QueryAllResultOf<Q> };
+type QueryResult<Q extends NestedQuery> = {
+	query: QueryResultOf<Q>;
+	queryAll: QueryAllResultOf<Q>;
+};
 
 type QueryResultMerged<Q extends NestedQuery> = QueryResultOf<Q> & QueryAllResultOf<Q>;
 type QueryResultMerged2<Q1 extends NestedQuery, Q2 extends NestedQuery> = QueryResultOf<Q1> & QueryAllResultOf<Q2>;
@@ -40,7 +48,7 @@ export function htmlTupleFn<T extends Node | string, Q1 extends NestedQuery, Q2 
 
 	// append query
 	//const queryResults = buildQueryResult<Q>(containerEl, options);
-	const queryResultsMerged = buildQueryResultMerged<Q1, Q2>(containerEl, options);
+	const queryResultsMerged = buildMergedQueryResult<Q1, Q2>(containerEl, options);
 	return [resultNode as DeterminedNodeOnString<T>, queryResultsMerged] as const;
 }
 
@@ -48,11 +56,11 @@ export function htmlQuery<Q1 extends NestedQuery, Q2 extends NestedQuery>(
 	element: HTMLElement,
 	queryOptions: AnyQueryOptions<Q1, Q2>,
 ) {
-	return buildQueryResultMerged<Q1, Q2>(element, queryOptions);
+	return buildMergedQueryResult<Q1, Q2>(element, queryOptions);
 }
 
 // @deprecated
-function buildQueryResult<Q extends NestedQuery>(
+function _buildQueryResult<Q extends NestedQuery>(
 	containerEl: ContainerElement,
 	queryOptions?: Partial<QueryOptions<Q>>,
 ): QueryResult<Q> {
@@ -78,7 +86,7 @@ function buildQueryResult<Q extends NestedQuery>(
 	return result;
 }
 
-function buildQueryResultMerged<Q1 extends NestedQuery, Q2 extends NestedQuery>(
+function buildMergedQueryResult<Q1 extends NestedQuery, Q2 extends NestedQuery>(
 	element: ContainerElement,
 	queryOptions?: AnyQueryOptions<Q1, Q2>,
 ): QueryResultMerged2<Q1, Q2> {
@@ -112,7 +120,7 @@ export function hasQueryOption<Q1 extends NestedQuery, Q2 extends NestedQuery>(
 
 export function hasQueryAllOption<Q1 extends NestedQuery, Q2 extends NestedQuery>(
 	options?: AnyQueryOptions<Q1, Q2>,
-): options is { queryAll: Q2 } {
+): options is OptionsWithQueryAll<Q2> {
 	return Boolean(options?.queryAll);
 }
 

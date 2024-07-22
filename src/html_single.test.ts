@@ -255,10 +255,14 @@ describe("htmlSingleFn", () => {
 					{ stripWhitespace: false },
 				)
 
+				// 2 nodes, and spaces in-between
 				expect(el.childNodes).toHaveLength(5)
+				expect(el.childNodes[0].textContent).toContain("\n")
+				expect(el.childNodes[2].textContent).toContain("\n")
+				expect(el.childNodes[4].textContent).toContain("\n")
 			})
 
-			test("strip whitespaces between nodes", () => {
+			test("strip whitespaces between nodes completely", () => {
 				const el = htmlSingleFn<HTMLDivElement>(
 					`<div>
 						<span>span 1</span>
@@ -267,7 +271,27 @@ describe("htmlSingleFn", () => {
 					{ stripWhitespace: true },
 				)
 
+				// 2 nodes only
 				expect(el.childNodes).toHaveLength(2)
+			})
+
+			test("strip whitespaces between nodes completely", () => {
+				const el = htmlSingleFn<HTMLDivElement>(
+					`<div>
+
+						<span>span 1</span>
+
+
+						<span>span 2</span>
+					</div>`,
+					{ stripWhitespace: "contract" },
+				)
+
+				// 2 nodes only
+				expect(el.childNodes).toHaveLength(5)
+				expect(el.childNodes[0].textContent).toEqual(" ")
+				expect(el.childNodes[2].textContent).toEqual(" ")
+				expect(el.childNodes[4].textContent).toEqual(" ")
 			})
 		})
 	})

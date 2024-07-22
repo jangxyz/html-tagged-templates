@@ -1,0 +1,166 @@
+//
+// types and helper utilities related to HTML
+//
+
+// tags
+
+export type HtmlElementTagName = keyof HTMLElementTagNameMap;
+type Explain_HtmlTagName = HtmlElementTagName & {};
+
+//
+// attributes
+
+// from https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
+// check https://html.spec.whatwg.org/multipage/indices.html#attributes-3 for spec.
+// TODO: split by elements
+export const VALUED_ATTRIBUTE_NAMES = [
+	"accept",
+	"accept-charset",
+	"accesskey",
+	"action",
+	"align",
+	"allow",
+	"alt",
+	"as",
+	"async",
+	"autocapitalize",
+	"autocomplete",
+	"autoplay",
+	"background",
+	"bgcolor",
+	"border",
+	"capture",
+	"charset",
+	"checked",
+	"cite",
+	"class",
+	"color",
+	"cols",
+	"colspan",
+	"content",
+	"contenteditable",
+	"controls",
+	"coords",
+	"crossorigin",
+	"csp",
+	"data",
+	"data-*",
+	"datetime",
+	"decoding",
+	"default",
+	"defer",
+	"dir",
+	"dirname",
+	"disabled",
+	"download",
+	"draggable",
+	"enctype",
+	"enterkeyhint",
+	"for",
+	"form",
+	"formaction",
+	"formenctype",
+	"formmethod",
+	"formnovalidate",
+	"formtarget",
+	"headers",
+	"height",
+	"hidden",
+	"high",
+	"href",
+	"hreflang",
+	"http-equiv",
+	"id",
+	"integrity",
+	"intrinsicsize",
+	"inputmode",
+	"ismap",
+	"itemprop",
+	"kind",
+	"label",
+	"lang",
+	"language",
+	"loading",
+	"list",
+	"loop",
+	"low",
+	"max",
+	"maxlength",
+	"minlength",
+	"media",
+	"method",
+	"min",
+	"multiple",
+	"muted",
+	"name",
+	"novalidate",
+	"open",
+	"optimum",
+	"pattern",
+	"ping",
+	"placeholder",
+	"playsinline",
+	"poster",
+	"preload",
+	"readonly",
+	"referrerpolicy",
+	"rel",
+	"required",
+	"reversed",
+	"role",
+	"rows",
+	"rowspan",
+	"sandbox",
+	"scope",
+	"scoped",
+	"selected",
+	"shape",
+	"size",
+	"sizes",
+	"slot",
+	"span",
+	"spellcheck",
+	"src",
+	"srcdoc",
+	"srclang",
+	"srcset",
+	"start",
+	"step",
+	"style",
+	"summary",
+	"tabindex",
+	"target",
+	"title",
+	"translate",
+	"type",
+	"usemap",
+	"value",
+	"width",
+	"wrap",
+] as const;
+
+export type ValuedAttributeName = (typeof VALUED_ATTRIBUTE_NAMES)[number];
+
+// from https://meiert.com/en/blog/boolean-attributes-of-html/
+export const BOOLEAN_ATTRIBUTE_NAMES = [
+	"loop",
+	"multiple",
+	"muted",
+	"nomodule",
+	"novalidate",
+	"open",
+	"playsinline",
+	"readonly",
+	"required",
+	"reversed",
+	"selected",
+] as const;
+export type BooleanAttributeName = (typeof BOOLEAN_ATTRIBUTE_NAMES)[number];
+
+export type AttributeName = ValuedAttributeName | BooleanAttributeName;
+
+export type AttrValue = number | boolean | EventListener;
+
+// events
+
+export type EventKeyName = `on${keyof HTMLElementEventMap}`;

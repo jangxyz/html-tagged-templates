@@ -1,14 +1,8 @@
-import type {
-	HtmlTagName,
-	ExtractElementPrefix,
-	CommentPrefixedString,
-	NotStartWithLeftAngleBracket,
-	CheckTextPrefix,
-	CheckCommentPrefix,
-} from "./utils.js";
+import type { ExtractElementPrefix, CommentPrefixedString, NotStartWithLeftAngleBracket } from "./utils.js";
+import type { AttrValue } from "./utils/html-types.js";
 import type { IfNotNeverThen } from "./utils/types_util.js";
 
-export type NestedQuery = Record<string, string>;
+//export type NestedQuery<V = string> = Record<string, V>;
 
 export type ContainerElement = HTMLElement | HTMLTemplateElement;
 
@@ -21,30 +15,24 @@ export type DeterminedNode<S extends string> = IfNotNeverThen<
 >;
 export type DeterminedNodeOnString<T extends Node | string> = T extends string ? DeterminedNode<T> : T;
 
-export type AttrValue = number | boolean | EventListener;
-
 export type SpecString<T extends Node | string> = T extends string ? T : string;
 export type PartialChunk = string | AttrValue | Node | PartialChunk[];
 export type SpecStringInputs<T extends Node | string> = [SpecString<T>, ...PartialChunk[]];
 
-//type StringToNode<T extends string> = T extends HtmlTagName
-//	? HTMLElementTagNameMap[T]
-//	: T extends CheckCommentPrefix<T>
-//		? Comment
-//		: T extends CheckTextPrefix<T>
-//			? Text
-//			: Node;
-//
+export type HtmlSingleOptions = {
+	trim: boolean;
+	stripWhitespace: boolean | "contract";
+};
 
 export const DEFAULT_TRIM_OPTION = true;
-export const DEFAULT_WHITESPACE_OPTION = true;
+export const DEFAULT_WHITESPACE_OPTION: HtmlSingleOptions["stripWhitespace"] = "contract";
 
 /**
  * Build a single element from an html string. Will reuse the container element if provided.
  */
 
 //// overload: HTMLElement
-//export function buildSingleNode<T extends HtmlTagName>( htmlString: ElementPrefixedString<T>,): [HTMLElementTagNameMap[T], ContainerElement];
+//export function buildSingleNode<T extends HtmlElementTagName>( htmlString: ElementPrefixedString<T>,): [HTMLElementTagNameMap[T], ContainerElement];
 //// overload: Comment
 //export function buildSingleNode<T extends string>(htmlString: CheckCommentPrefix<T>): [Comment, ContainerElement];
 //// overload: other - Text
@@ -55,7 +43,7 @@ export const DEFAULT_WHITESPACE_OPTION = true;
 // actual implementation
 export function buildSingleNode<T extends Node | string>(
 	htmlString: string,
-	options?: Partial<{ trim: boolean; stripWhitespace: boolean }>,
+	options?: Partial<HtmlSingleOptions>,
 ): [DeterminedNodeOnString<T>, ContainerElement] {
 	const { trim, stripWhitespace } = {
 		trim: DEFAULT_TRIM_OPTION,
@@ -65,7 +53,9 @@ export function buildSingleNode<T extends Node | string>(
 
 	// strip whitespace in-between nodes
 	let _htmlString = htmlString;
-	if (stripWhitespace) {
+	if (stripWhitespace === "contract") {
+		_htmlString = htmlString.replace(/>\s+/g, "> ").replace(/\s+</g, " <");
+	} else if (stripWhitespace) {
 		_htmlString = htmlString.replace(/>\s+/g, ">").replace(/\s+</g, "<");
 	}
 
@@ -129,11 +119,18 @@ export function queryAllContainer<T extends HTMLElement = HTMLElement>(
 
 ///
 
+export function isHTMLElement(node: Node): node is HTMLElement {
+	return node.nodeType === document.ELEMENT_NODE;
+}
+
 function isEmptyTextNode(node: Node | undefined | null): node is Text {
 	if (!node) return false;
 	return node.nodeType === document.TEXT_NODE && node.nodeValue?.trim() === "";
 }
 
+/**
+ * Build a tuple of [Node array, container element] from HTML string.
+ */
 export function buildChildNodes<T extends Node[]>(
 	htmlString: string,
 	container?: ContainerElement,

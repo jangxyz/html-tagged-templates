@@ -1,23 +1,19 @@
 import {
-	buildSingleNode,
+	isHTMLElement,
 	queryContainer,
+	buildSingleNode,
 	type ContainerElement,
 	type SpecString,
 	type DeterminedNodeOnString,
 	type PartialChunk,
 	type SpecStringInputs,
-	isHTMLElement,
+	type HtmlSingleOptions,
 } from "./base.js";
 
 import { assert } from "./utils.js";
 
 const REMOVE_ATTR_VALUE = Symbol.for("remove-attr-value");
 const REMOVE_ATTR = Symbol.for("remove-attribute");
-
-type Options = {
-	trim: boolean;
-	stripWhitespace: boolean;
-};
 
 /**
  * Create single html node from (multiples of) string.
@@ -32,14 +28,14 @@ type Options = {
 // actual implementation
 export function htmlSingleFn<T extends Node | string>(
 	partialInput: SpecString<T> | SpecStringInputs<T>,
-	options?: Partial<Options>,
+	options?: Partial<HtmlSingleOptions>,
 ): DeterminedNodeOnString<T> {
 	return _htmlSingleFn(partialInput, options)[0];
 }
 
 export function _htmlSingleFn<T extends Node | string>(
 	partialInput: SpecString<T> | SpecStringInputs<T>,
-	options?: Partial<Options>,
+	options?: Partial<HtmlSingleOptions>,
 ) {
 	const partials: SpecStringInputs<T> = Array.isArray(partialInput) ? partialInput : [partialInput];
 

@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, test } from "vitest"
-import { htmlTupleFn } from "./html_tuple.js"
+import { htmlQuery, htmlTupleFn } from "./html_tuple.js"
 import { stripIndent } from "common-tags"
 
 describe("htmlTupleFn", () => {
@@ -169,5 +169,28 @@ describe("htmlTupleFn", () => {
 			expectTypeOf(itemEls).toEqualTypeOf<NodeListOf<HTMLLIElement>>()
 			//           ^?
 		})
+	})
+})
+
+describe("htmlQuery", () => {
+	test("recognize mixed query types", () => {
+		const [divEl] = htmlTupleFn(`<div>
+				<p>See the list</p>
+				<ul>
+					<li>first item</li>
+					<li>second item</li>
+				</ul>
+			</div>
+		`)
+
+		const { firstItemEl, itemEls } = htmlQuery(divEl, {
+			query: { firstItemEl: "li:first-of-type" },
+			queryAll: { itemEls: "li" },
+		})
+
+		expectTypeOf(firstItemEl).toEqualTypeOf<HTMLLIElement>()
+		//           ^?
+		expectTypeOf(itemEls).toEqualTypeOf<NodeListOf<HTMLLIElement>>()
+		//           ^?
 	})
 })

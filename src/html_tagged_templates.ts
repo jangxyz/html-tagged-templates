@@ -1,6 +1,6 @@
 import { htmlSingleFn } from "./html_single.js";
 import type { PartialChunk } from "./base.js";
-import type { HtmlTagName } from "./utils.js";
+import type { HtmlElementTagName } from "./utils/html-types.js";
 //import type { ElementPrefixedString } from "./utils";
 
 //interface MyTemplateStringsArray extends ReadonlyArray<string> {
@@ -20,10 +20,10 @@ interface DivTemplateStringsArray extends TemplateStringsArray {
 	0: "<div " | `${"<div "}${string}`;
 }
 
-function htmlTaggedTemplates<T extends HTMLElement | HtmlTagName | undefined = undefined>(
+function htmlTaggedTemplates<T extends HTMLElement | HtmlElementTagName | undefined = undefined>(
 	strings: TemplateStringsArray,
 	...values: PartialChunk[]
-): T extends undefined ? HTMLElement : T extends HtmlTagName ? HTMLElementTagNameMap[T] : T {
+): T extends undefined ? HTMLElement : T extends HtmlElementTagName ? HTMLElementTagNameMap[T] : T {
 	if (strings.length === 0) {
 		throw new Error("empty string");
 	}
@@ -42,7 +42,7 @@ function htmlTaggedTemplates<T extends HTMLElement | HtmlTagName | undefined = u
 	}
 
 	const result = htmlSingleFn(partialChunks as [string, ...PartialChunk[]]);
-	return result as T extends undefined ? HTMLElement : T extends HtmlTagName ? HTMLElementTagNameMap[T] : T;
+	return result as T extends undefined ? HTMLElement : T extends HtmlElementTagName ? HTMLElementTagNameMap[T] : T;
 }
 
 export { htmlTaggedTemplates as html };

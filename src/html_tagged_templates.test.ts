@@ -47,7 +47,7 @@ test("may have array of nested elements2", () => {
 })
 
 describe("text node", () => {
-	test("should be trimmed", () => {
+	test("should be trimmed on the edge", () => {
 		const buttonEl = html`<button>
 			click 
 		</button>`
@@ -55,10 +55,18 @@ describe("text node", () => {
 		expect(buttonEl.childNodes).toHaveLength(1)
 		expect(buttonEl.childNodes[0].nodeValue).toEqual("click")
 	})
+
+	test("should NOT be trimmed inside", () => {
+		const buttonEl = html`<button>
+			${"click"}${"  "}${"me"}
+		</button>`
+
+		expect(buttonEl.childNodes).toHaveLength(1)
+		expect(buttonEl.childNodes[0].nodeValue).toEqual("click  me")
+	})
 })
 
 describe("attributes", () => {
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 	let context: any = {}
 	beforeEach(() => {
 		context = {
