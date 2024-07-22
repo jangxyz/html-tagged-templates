@@ -1,22 +1,19 @@
 import {
-	buildSingleNode,
+	isHTMLElement,
 	queryContainer,
+	buildSingleNode,
 	type ContainerElement,
 	type SpecString,
 	type DeterminedNodeOnString,
 	type PartialChunk,
 	type SpecStringInputs,
-	DEFAULT_WHITESPACE_OPTION,
+	type HtmlSingleOptions,
 } from "./base.js";
+
 import { assert } from "./utils.js";
 
 const REMOVE_ATTR_VALUE = Symbol.for("remove-attr-value");
 const REMOVE_ATTR = Symbol.for("remove-attribute");
-
-type Options = {
-	trim: boolean;
-	stripWhitespace: boolean;
-};
 
 /**
  * Create single html node from (multiples of) string.
@@ -30,16 +27,15 @@ type Options = {
 
 // actual implementation
 export function htmlSingleFn<T extends Node | string>(
-	//partialInput: string | (string | AttrValue)[],
 	partialInput: SpecString<T> | SpecStringInputs<T>,
-	options?: Partial<Options>,
+	options?: Partial<HtmlSingleOptions>,
 ): DeterminedNodeOnString<T> {
 	return _htmlSingleFn(partialInput, options)[0];
 }
 
 export function _htmlSingleFn<T extends Node | string>(
 	partialInput: SpecString<T> | SpecStringInputs<T>,
-	options?: Partial<Options>,
+	options?: Partial<HtmlSingleOptions>,
 ) {
 	const partials: SpecStringInputs<T> = Array.isArray(partialInput) ? partialInput : [partialInput];
 
@@ -56,37 +52,37 @@ export function _htmlSingleFn<T extends Node | string>(
 	return [node as DeterminedNodeOnString<T>, containerEl] as const;
 }
 
+// typical html element build function
+
+//type Attributes = Record<string, string | number | boolean | EventListener>;
+//type ElementAttributes = Record<string, string | number | boolean> & GlobalEventHandlers;
+
 /**
  * Reduce partial strings into a single html, with following:
  *  - verify that attr values appear only on attribute value positions.
  *  - mark callback functions with temporal string.
  */
-export function reducePartialChunks<T extends string = string>(partials: [T, ...PartialChunk[]]) {
+function reducePartialChunks<T extends string = string>(partials: [T, ...PartialChunk[]]) {
 	const callbackMarkMap = new Map<[string, string], EventListener>();
-	const childrenMarkMap = new Map<string, Node>();
+	const childNodeMarkMap = new Map<string, Node>();
 
 	type Context = {
 		htmlSoFar: string;
 		insideTag: boolean;
-		startAttr: '"' | "'" | null;
+		attrStartMark: '"' | "'" | null;
 		lastAttrName: string | null;
-		endAttr: null | typeof REMOVE_ATTR_VALUE | typeof REMOVE_ATTR;
+		endAttrAs: null | typeof REMOVE_ATTR_VALUE | typeof REMOVE_ATTR;
 	};
 	const initialContext: Context = {
 		insideTag: false,
-		startAttr: null,
+		attrStartMark: null,
 		lastAttrName: null,
-		endAttr: null,
+		endAttrAs: null,
 		htmlSoFar: "",
 	};
 
-	const reducePartial = (
-		currentContext: Context,
-		partial: PartialChunk,
-		_index?: number,
-		_entire?: PartialChunk[],
-	): Context => {
-		let { htmlSoFar, insideTag, startAttr, lastAttrName, endAttr } = currentContext;
+	function reducer(currentContext: Context, partial: PartialChunk, _index?: number, _entire?: PartialChunk[]): Context {
+		let { htmlSoFar, insideTag, attrStartMark, lastAttrName, endAttrAs } = currentContext;
 
 		// part of html chunk
 		if (typeof partial === "string") {
@@ -111,8 +107,8 @@ export function reducePartialChunks<T extends string = string>(partials: [T, ...
 						if (insideTag) {
 							const next = strChunk[i + 1];
 							if (next === '"' || next === "'") {
-								startAttr = strChunk[i + 1] as typeof next;
-								endAttr = null;
+								attrStartMark = strChunk[i + 1] as typeof next;
+								endAttrAs = null;
 
 								const spaceIndex = htmlSoFar.lastIndexOf(" ");
 								lastAttrName = htmlSoFar.slice(spaceIndex + 1, -1);
@@ -127,19 +123,19 @@ export function reducePartialChunks<T extends string = string>(partials: [T, ...
 					case '"':
 					case "'":
 						// end attribute
-						if (insideTag && startAttr) {
-							assert(startAttr === ch, `attr should end with ${ch}`);
+						if (insideTag && attrStartMark) {
+							assert(attrStartMark === ch, `attr should end with ${ch}`);
 
 							// value was true, so we only leave attribute name
-							if (endAttr === REMOVE_ATTR_VALUE) {
-								htmlSoFar = htmlSoFar.replace(new RegExp(`=${startAttr.repeat(2)}$`), "");
+							if (endAttrAs === REMOVE_ATTR_VALUE) {
+								htmlSoFar = htmlSoFar.replace(new RegExp(`=${attrStartMark.repeat(2)}$`), "");
 							}
 							// value was false, so we remove attribute completely
-							else if (endAttr === REMOVE_ATTR) {
-								htmlSoFar = htmlSoFar.replace(new RegExp(`${lastAttrName}=${startAttr.repeat(2)}$`), "");
+							else if (endAttrAs === REMOVE_ATTR) {
+								htmlSoFar = htmlSoFar.replace(new RegExp(`${lastAttrName}=${attrStartMark.repeat(2)}$`), "");
 							}
 
-							startAttr = null;
+							attrStartMark = null;
 							lastAttrName = null;
 						}
 						break;
@@ -148,7 +144,7 @@ export function reducePartialChunks<T extends string = string>(partials: [T, ...
 		}
 		// attribute callback function
 		else if (typeof partial === "function") {
-			assert(insideTag && startAttr && lastAttrName, "functions are allowed only as an attribute");
+			assert(insideTag && attrStartMark && lastAttrName, "functions are allowed only as an attribute");
 
 			// temporarily generate random function mark.
 			// this will be replaced by actual functions later.
@@ -159,58 +155,62 @@ export function reducePartialChunks<T extends string = string>(partials: [T, ...
 		}
 		// boolean attribute
 		else if (typeof partial === "boolean") {
-			assert(insideTag && startAttr && lastAttrName, "boolean values are allowed only as an attribute");
+			assert(insideTag && attrStartMark && lastAttrName, "boolean values are allowed only as an attribute");
 
 			// TODO: while some attributes like "checked" have boolean values,
 			// some attributes have string "true", "false" values (aria-pressed)
 			// it may be better if we could distinguish all the attributes, and apply them
 
-			// leave only attribute without any value
+			// leave only attribute, without any value (<input type="checkbox" checked />)
 			if (partial) {
 				// mark special symbol so the value could be removed later
 				//startAttr = startAttr === '"' ? REMOVE_ATTR_VALUE_DOUBLE : REMOVE_ATTR_VALUE_SINGLE;
-				endAttr = REMOVE_ATTR_VALUE;
+				endAttrAs = REMOVE_ATTR_VALUE;
 			}
 			// remove attribute
 			else {
 				// mark special symbol so the value could be removed later
 				//startAttr = startAttr === '"' ? REMOVE_ATTR_DOUBLE : REMOVE_ATTR_SINGLE;
-				endAttr = REMOVE_ATTR;
+				endAttrAs = REMOVE_ATTR;
 			}
 		}
-		// node is onyl available as a child node
+		// node is only available as a child node
 		else if (partial instanceof Node) {
-			assert(!insideTag, "nodes are allowed only as a child");
+			assert(!insideTag, "nested nodes are allowed only as a child");
 
-			// temporarily generate random function mark.
-			// this will be replaced by actual functions later.
-			const markId = `n${crypto.randomUUID()}`;
-			childrenMarkMap.set(markId, partial);
+			if (isHTMLElement(partial)) {
+				const tagName = partial.tagName;
 
-			htmlSoFar += `<span id="${markId}"></span>`;
+				// temporarily generate random function mark.
+				// this will be replaced by actual functions later.
+				const markId = `n${crypto.randomUUID()}`;
+				childNodeMarkMap.set(markId, partial);
+
+				htmlSoFar += `<${tagName} id="${markId}"></${tagName}>`;
+			}
 		}
 		// iteratively apply with current context.
 		// NOTE other context values beside `htmlSoFar` does not change
 		else if (Array.isArray(partial)) {
 			const { htmlSoFar: finalHtml } = partial.reduce((partialContext, partialItem) => {
-				return reducePartial(partialContext, partialItem);
+				return reducer(partialContext, partialItem);
 			}, currentContext);
 
 			htmlSoFar = finalHtml;
 		}
 		// other primitives, keep on chunking as string
 		else {
-			assert(!insideTag || (startAttr && lastAttrName), `${partial} is only allowed as an attribute`);
+			assert(!insideTag || (attrStartMark && lastAttrName), `${partial} is only allowed as an attribute`);
 
 			htmlSoFar += String(partial);
 		}
 
-		return { htmlSoFar, insideTag, startAttr, lastAttrName, endAttr };
-	};
+		return { htmlSoFar, insideTag, attrStartMark, lastAttrName, endAttrAs };
+	}
 
-	const resultContext = partials.reduce(reducePartial, initialContext);
+	const resultContext = partials.reduce(reducer, initialContext);
 
-	return [resultContext.htmlSoFar as T, callbackMarkMap, childrenMarkMap, resultContext] as const;
+	return [resultContext.htmlSoFar as T, callbackMarkMap, childNodeMarkMap, resultContext] as const;
 }
 
 export function bindMarks(
@@ -237,7 +237,7 @@ export function bindMarks(
 		const selector = `#${markId}`;
 		const targetNode = queryContainer(containerEl, selector);
 		if (!targetNode) {
-			console.warn("failed finding element with id:", markId);
+			console.warn("failed finding element with id in element:", markId);
 			continue;
 		}
 

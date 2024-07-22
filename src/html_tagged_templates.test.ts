@@ -19,6 +19,14 @@ test("may have nested element", () => {
 	expect(el.querySelector("button")).toBeInstanceOf(HTMLButtonElement)
 })
 
+test("may have nested element2", () => {
+	const el = html`<select>
+		${html`<option>option 1</option>`}
+	</select>`
+
+	expect(el.querySelector("option")).toBeInstanceOf(HTMLOptionElement)
+})
+
 test("may have array of nested elements", () => {
 	const el = html`<div>
     I am an element, and this is a 
@@ -28,8 +36,18 @@ test("may have array of nested elements", () => {
 	expect(el.querySelectorAll("button")).toHaveLength(2)
 })
 
+test("may have array of nested elements2", () => {
+	const select = html`<select>
+		${["draw", "fill", "rectangle", "pick"].map((text) => html`<option>${text}</option>`)}
+	</select>`
+
+	console.log("select:", select.outerHTML)
+
+	expect(select.querySelectorAll("option")).toHaveLength(4)
+})
+
 describe("text node", () => {
-	test("should be trimmed", () => {
+	test("should be trimmed on the edge", () => {
 		const buttonEl = html`<button>
 			click 
 		</button>`
@@ -37,10 +55,18 @@ describe("text node", () => {
 		expect(buttonEl.childNodes).toHaveLength(1)
 		expect(buttonEl.childNodes[0].nodeValue).toEqual("click")
 	})
+
+	test("should NOT be trimmed inside", () => {
+		const buttonEl = html`<button>
+			${"click"}${"  "}${"me"}
+		</button>`
+
+		expect(buttonEl.childNodes).toHaveLength(1)
+		expect(buttonEl.childNodes[0].nodeValue).toEqual("click  me")
+	})
 })
 
 describe("attributes", () => {
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 	let context: any = {}
 	beforeEach(() => {
 		context = {
@@ -89,48 +115,5 @@ describe("options", () => {
 		</div>`
 
 		expect(el.childNodes.length).toEqual(2)
-	})
-})
-
-describe("typing", () => {
-	describe("with generics", () => {
-		test("can pass type as generic", () => {
-			const divEl = html<HTMLDivElement>`<div>I am a DIV element</div>`
-			//    ^?
-			expectTypeOf<HTMLDivElement>(divEl)
-
-			const pEl = html<HTMLParagraphElement>`<p>I am a P element</p>`
-			//    ^?
-			expectTypeOf<HTMLParagraphElement>(pEl)
-		})
-
-		test("can pass tag name as generic", () => {
-			const divEl = html<"div">`<div>I am a DIV element</div>`
-			//    ^?
-			expectTypeOf<HTMLDivElement>(divEl)
-
-			const pEl = html<"p">`<p>I am a P element</p>`
-			//    ^?
-			expectTypeOf<HTMLParagraphElement>(pEl)
-		})
-	})
-
-	describe("inference", () => {
-		test("can only return HTMLElement by default", () => {
-			const divEl = html`<div>I am just an element</div>`
-			//    ^?
-			expectTypeOf<HTMLElement>(divEl)
-		})
-
-		// not possible before typescript supports it
-		test.skip("can figure out type of outermost element", () => {
-			const divEl = html`<div>I am a DIV element</div>`
-			//    ^?
-			expectTypeOf<HTMLDivElement>(divEl)
-
-			const pEl = html`<p>I am a P element</p>`
-			//    ^?
-			expectTypeOf<HTMLParagraphElement>(pEl)
-		})
 	})
 })

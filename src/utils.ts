@@ -1,8 +1,4 @@
-// XXX DEBUG
-//type HTMLElementTagNameMap = { a: HTMLAnchorElement; div: HTMLDivElement; span: HTMLSpanElement; };
-
-export type HtmlTagName = keyof HTMLElementTagNameMap;
-type Explain_HtmlTagName = HtmlTagName & {};
+import type { HtmlElementTagName } from "./utils/html-types.js";
 
 //type ReservedNames = "this" | "that"
 //type NotA<T> = T extends ReservedNames ? never : T
@@ -23,13 +19,13 @@ export type TagStartDelimiter = " " | ">" | "/>";
 //export type TagStartDelimiter = ">";
 
 //
-//export type HtmlElementPrefix<TagName extends HtmlTagName> = `<${TagName}>` | `<${TagName} ` | `<${TagName}/>`;
-export type HtmlElementPrefix<T_TagName extends HtmlTagName> = `<${T_TagName}${string}`;
-//export type HtmlElementPrefix<TagName extends HtmlTagName> = `<${TagName} ` | `<${TagName}/>`;
-//export type HtmlElementPrefix<TagName extends HtmlTagName> = `<${TagName}>`;
-export type ElementPrefixedString<T_TagName extends HtmlTagName> = `<${T_TagName}${TagStartDelimiter}${string}`;
+//export type HtmlElementPrefix<TagName extends HtmlElementTagName> = `<${TagName}>` | `<${TagName} ` | `<${TagName}/>`;
+export type HtmlElementPrefix<T_TagName extends HtmlElementTagName> = `<${T_TagName}${string}`;
+//export type HtmlElementPrefix<TagName extends HtmlElementTagName> = `<${TagName} ` | `<${TagName}/>`;
+//export type HtmlElementPrefix<TagName extends HtmlElementTagName> = `<${TagName}>`;
+export type ElementPrefixedString<T_TagName extends HtmlElementTagName> = `<${T_TagName}${TagStartDelimiter}${string}`;
 export type ExtractElementPrefix<S extends string> = S extends `<${infer T_TagName}${TagStartDelimiter}${string}`
-	? T_TagName extends HtmlTagName
+	? T_TagName extends HtmlElementTagName
 		? T_TagName
 		: never
 	: never;
@@ -40,14 +36,14 @@ export type ExtractElementPrefix<S extends string> = S extends `<${infer T_TagNa
 //
 
 export type CommentPrefixedString = `<!--${string}`;
-//type TypedHtmlString<T extends string> = T extends HtmlTagName ? HtmlPrefix<"div"> : Text;
+//type TypedHtmlString<T extends string> = T extends HtmlElementTagName ? HtmlPrefix<"div"> : Text;
 
 export type CheckCommentPrefix<T extends string> = T extends `<!--${string}` ? T : never;
 
 export type CheckTextPrefix<T extends string> = NotStartWithLeftAngleBracket<T>;
 
 type CaptureTagName<S extends string> = S extends `<${infer T_TagName}${TagStartDelimiter}${string}`
-	? T_TagName extends HtmlTagName
+	? T_TagName extends HtmlElementTagName
 		? T_TagName
 		: never
 	: never;

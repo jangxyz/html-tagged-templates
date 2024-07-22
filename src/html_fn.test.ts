@@ -256,7 +256,7 @@ describe("attributes", () => {
 	test("assign other primitives", () => {
 		const checkbox = htmlSingleFn(['<input type="checkbox" checked="', true, '" />'])
 
-		expect(checkbox.getAttribute("checked")).toEqual("true")
+		expect(checkbox.checked).toEqual(true)
 	})
 
 	describe("types", () => {

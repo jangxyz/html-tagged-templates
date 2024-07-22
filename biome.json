@@ -15,10 +15,17 @@
 		"indentWidth": 2
 	},
 	"overrides": [{
-    "include": ["src/**/*.test.ts"],
+    "include": ["src/**/*.test.ts", "src/**/*.test-d.ts"],
 		"javascript": {
 			"formatter": {
 				"semicolons": "asNeeded"
+			}
+		},
+		"linter": {
+			"rules": {
+				"suspicious": {
+					"noExplicitAny": "off"
+				}
 			}
 		}
 	}]
