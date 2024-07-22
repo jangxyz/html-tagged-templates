@@ -8,10 +8,12 @@ import {
 	type PartialChunk,
 	type SpecStringInputs,
 	type HtmlSingleOptions,
+	type FlattenedSpecStringInputs,
+	type PartialChunkItem,
 } from "./base.js";
 
 import { assert } from "./utils.js";
-import { AttrValue } from "./utils/html-types.js";
+import type { AttrValue } from "./utils/html-types.js";
 
 const REMOVE_ATTR_VALUE = Symbol.for("remove-attr-value");
 const REMOVE_ATTR = Symbol.for("remove-attribute");
@@ -34,15 +36,23 @@ export function htmlSingleFn<T extends Node | string>(
 	return _htmlSingleFn(partialInput, options)[0];
 }
 
+function flattenChunks(chunks: PartialChunk[]): PartialChunkItem[] {
+	return chunks.reduce<PartialChunkItem[]>((memo, input) => {
+		return memo.concat(Array.isArray(input) ? flattenChunks(input) : input);
+	}, [] as PartialChunkItem[]);
+}
+
 export function _htmlSingleFn<T extends Node | string>(
 	partialInput: SpecString<T> | SpecStringInputs<T>,
 	options?: Partial<HtmlSingleOptions>,
 ) {
 	const partials: SpecStringInputs<T> = Array.isArray(partialInput) ? partialInput : [partialInput];
+	const [head, ...tail] = partials;
+	const flattendPartials = [head, ...flattenChunks(tail)] as FlattenedSpecStringInputs<T>;
 
 	// reduce partial strings into a single html string, merging into a single html string.
 	// temporarily marking callback functions with unique markers.
-	const [htmlString, attributeMarkMap, callbackMarkMap, childNodeMarkMap] = reducePartialChunks(partials);
+	const [htmlString, attributeMarkMap, callbackMarkMap, childNodeMarkMap] = reducePartialChunks(flattendPartials);
 
 	// build node from string
 	const [node, containerEl] = buildSingleNode(htmlString, options);
@@ -50,7 +60,17 @@ export function _htmlSingleFn<T extends Node | string>(
 	// now re-bind marks to function callbacks
 	bindMarks(containerEl, attributeMarkMap, callbackMarkMap, childNodeMarkMap);
 
-	return [node as DeterminedNodeOnString<T>, containerEl] as const;
+	// By default, nodes created by <template> tag is not rendered.
+	// ( https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template#template_document_fragment )
+	// This can be a problem in cases like <img /> elements, since user may expect
+	// 'onload' handler to be called when 'src' attribute is set, which in this case does not.
+	// To overcome this behavior, we dip the node into a document fragment, to make it so.
+	// Note this needs to be done *after* the mark binding is complete.
+	const fragment = document.createDocumentFragment();
+	fragment.append(node);
+	const resultNode = fragment.childNodes[0];
+
+	return [resultNode as DeterminedNodeOnString<T>, containerEl] as const;
 }
 
 // typical html element build function
@@ -63,7 +83,7 @@ export function _htmlSingleFn<T extends Node | string>(
  *  - verify that attr values appear only on attribute value positions.
  *  - mark callback functions with temporal string.
  */
-function reducePartialChunks<T extends string = string>(partials: [T, ...PartialChunk[]]) {
+function reducePartialChunks<T extends string = string>(partials: [T, ...PartialChunkItem[]]) {
 	const attributeMarkMap = new Map<[string, string], string | number | boolean>();
 	const callbackMarkMap = new Map<[string, string], EventListener>();
 	const childNodeMarkMap = new Map<string, Node>();
@@ -189,7 +209,7 @@ function reducePartialChunks<T extends string = string>(partials: [T, ...Partial
 								);
 								assert(attrValue, "cannot find attr value");
 								lastAttrValue = attrValue;
-								//console.log("🚀 ~ file: html_single.ts:198 ~ lastAttrValue for:", lastAttrName, lastAttrValue);
+								//console.log("🚀 ~ file: html_single.ts:198 ~ lastAttrValue for:", lastAttrName, { lastAttrValue, htmlSoFar, i, chunk, ch, });
 							}
 
 							if (typeof lastAttrValue !== "function") {
@@ -198,7 +218,7 @@ function reducePartialChunks<T extends string = string>(partials: [T, ...Partial
 									new RegExp(`(${lastAttrName})=${attrStartMark}.*${ch}$`),
 									`data-$1=${attrStartMark}${markId}${ch}`,
 								);
-								//console.log("🚀 ~ file: html_single.ts:181 ~ reducer ~ newHtml:", newHtml);
+								//console.log("🚀 ~ file: html_single.ts:213 ~ lastAttrValue:", lastAttrValue, { lastAttrName, markId });
 								attributeMarkMap.set([lastAttrName, markId], lastAttrValue);
 							}
 
@@ -285,16 +305,14 @@ function reducePartialChunks<T extends string = string>(partials: [T, ...Partial
 				htmlSoFar += `<${tagName} id="${markId}"></${tagName}>`;
 			}
 		}
-		// iteratively apply with current context.
-		// NOTE other context values beside `htmlSoFar` does not change
-		else if (Array.isArray(chunk)) {
-			const { htmlSoFar: finalHtml } = chunk.reduce((partialContext, partialItem) => {
-				// FIXME:
-				return reducer(partialContext, partialItem);
-			}, currentContext);
-
-			htmlSoFar = finalHtml;
-		}
+		//// iteratively apply with current context.
+		//// NOTE other context values beside `htmlSoFar` does not change
+		//else if (Array.isArray(chunk)) {
+		//	const { htmlSoFar: finalHtml } = chunk.reduce((partialContext, partialItem) => {
+		//		return reducer(partialContext, partialItem);
+		//	}, currentContext);
+		//	htmlSoFar = finalHtml;
+		//}
 		// other primitives, keep on chunking as string
 		else {
 			assert(!insideTag || (attrStartMark && lastAttrName), `${chunk} is only allowed as an attribute`);
@@ -327,20 +345,23 @@ export function bindMarks(
 	callbackMarkMap: Map<[string, string], EventListener>,
 	childNodeMarkMap: Map<string, Node>,
 ) {
-	//console.log("🚀 ~ file: html_single.ts:331 ~ :", { attributeMarkMap, callbackMarkMap, childNodeMarkMap, html: containerEl.innerHTML });
+	//console.log("🚀 ~ file: html_single.ts:331 ~ :", JSON.stringify(containerEl.outerHTML), { attributeMarkMap, callbackMarkMap, childNodeMarkMap, });
 
 	// apply callback marks
+	// NOTE we should bind callbacks first, so in case like `<img src="" onload="() => { ... }" />`
+	// we can have onload callbacks bind first.
 	for (const [[attrName, markId], callback] of callbackMarkMap.entries()) {
 		// bind to first match
-		const selector = `[${attrName}=${markId}]`;
+		const selector = `[${attrName}="${markId}"]`;
 		const targetNode = queryContainer(containerEl, selector);
 		if (!targetNode) {
-			console.warn("failed finding element with attr:", attrName);
+			console.warn("failed finding element with attr:", selector);
 			continue;
 		}
 
 		targetNode.removeAttribute(attrName);
 		targetNode.addEventListener(attrName.replace(/^on/i, ""), callback);
+		//console.log("add event listener", attrName.replace(/^on/i, ""), callback, targetNode);
 	}
 
 	// apply attribute marks
@@ -349,7 +370,7 @@ export function bindMarks(
 		const selector = `[data-${attrName}=${markId}]`;
 		const targetNode = queryContainer(containerEl, selector);
 		if (!targetNode) {
-			console.warn("failed finding element with attr:", attrName);
+			console.warn("failed finding element with attr:", selector);
 			continue;
 		}
 
@@ -361,6 +382,7 @@ export function bindMarks(
 		} else {
 			targetNode.setAttribute(attrName, String(attrValue));
 		}
+		//console.log("set attribute", attrName, attrValue);
 	}
 
 	// apply child marks

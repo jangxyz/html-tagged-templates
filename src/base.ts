@@ -16,8 +16,11 @@ export type DeterminedNode<S extends string> = IfNotNeverThen<
 export type DeterminedNodeOnString<T extends Node | string> = T extends string ? DeterminedNode<T> : T;
 
 export type SpecString<T extends Node | string> = T extends string ? T : string;
-export type PartialChunk = string | AttrValue | Node | PartialChunk[];
 export type SpecStringInputs<T extends Node | string> = [SpecString<T>, ...PartialChunk[]];
+export type FlattenedSpecStringInputs<T extends Node | string> = [SpecString<T>, ...PartialChunkItem[]];
+
+export type PartialChunkItem = string | AttrValue | Node;
+export type PartialChunk = PartialChunkItem | PartialChunk[];
 
 export type HtmlSingleOptions = {
 	trim: boolean;
@@ -29,6 +32,9 @@ export const DEFAULT_WHITESPACE_OPTION: HtmlSingleOptions["stripWhitespace"] = "
 
 /**
  * Build a single element from an html string. Will reuse the container element if provided.
+ *
+ * NOTE node built by <template> tag is not rendered, and one may need to append
+ * it to a fresh document fragment to make it render without making it visible.
  */
 
 //// overload: HTMLElement
@@ -59,7 +65,7 @@ export function buildSingleNode<T extends Node | string>(
 		_htmlString = htmlString.replace(/>\s+/g, ">").replace(/\s+</g, "<");
 	}
 
-	const [resultNodes, _containerEl] = buildChildNodes(_htmlString);
+	const [resultNodes, containerEl] = buildChildNodes(_htmlString);
 
 	// trim empty text nodes
 	if (trim) {
@@ -81,7 +87,7 @@ export function buildSingleNode<T extends Node | string>(
 	}
 	const [node] = resultNodes;
 
-	return [node as DeterminedNodeOnString<T>, _containerEl];
+	return [node as DeterminedNodeOnString<T>, containerEl];
 }
 
 /**
@@ -130,11 +136,10 @@ function isEmptyTextNode(node: Node | undefined | null): node is Text {
 
 /**
  * Build a tuple of [Node array, container element] from HTML string.
+ *
+ * NOTE using template tag as a container does not render the element.
  */
-export function buildChildNodes<T extends Node[]>(
-	htmlString: string,
-	container?: ContainerElement,
-): [T, ContainerElement] {
+function buildChildNodes<T extends Node[]>(htmlString: string, container?: ContainerElement): [T, ContainerElement] {
 	const containerEl = container ?? document.createElement("template");
 
 	// assign innerHTML

@@ -9,12 +9,13 @@ export default defineWorkspace([
 	{
 		extends: "vitest.config.ts",
 		test: {
+			name: "browser",
 			include: ["src/**/*browser-test.ts"],
 			browser: {
 				provider: "playwright",
-				enabled: !true,
+				enabled: true,
 				name: "chromium",
-				headless: false,
+				//headless: false,
 				// https://playwright.dev
 				providerOptions: {},
 			},
